@@ -12,17 +12,25 @@ threshold1 = 30
 threshold2 = 200
 
 def main():
-    img = cv2.imread(image_name)
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    cap = cv2.VideoCapture(0)
 
-    balls = find_balls(img)
-    img2 = cv2.imread(image_name, 1)
+    while cap.isOpened():
+        ret, frame = cap.read()
 
-    for ball in balls:
-        draw_ball(img2, ball)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        balls = find_balls(gray)
 
-    skimage.io.imshow(img2)
-    skimage.io.show()
+        for ball in balls:
+            draw_ball(gray, ball)
+
+        cv2.imshow('frame', gray)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    cap.release()
+    cv2.destroyAllWindows()
+
+
 
 
 def draw_ball(img2, ball):
@@ -34,24 +42,24 @@ def find_balls(img):
     for i in range(blures):
         img = cv2.medianBlur(img, 5)
 
-    skimage.io.imshow(img)
-    skimage.io.show()
+    # skimage.io.imshow(img)
+    # skimage.io.show()
     img = cv2.Canny(img, threshold1, threshold2)
 
     # kernel = np.ones((5, 5), np.uint8)
     # img = cv2.dilate(img,kernel,iterations = 3)
     # cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
 
-    skimage.io.imshow(img)
-    skimage.io.show()
+    # skimage.io.imshow(img)
+    # skimage.io.show()
 
     img, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    img2 = cv2.imread(image_name, 1)
-    cv2.drawContours(img2, contours, -1, (0, 255, 0), 3)
-
-    skimage.io.imshow(img2)
-    skimage.io.show()
+    # img2 = cv2.imread(image_name, 1)
+    # cv2.drawContours(img2, contours, -1, (0, 255, 0), 3)
+    #
+    # skimage.io.imshow(img2)
+    # skimage.io.show()
 
     balls = []
 
@@ -76,22 +84,6 @@ def centre(contour):
     cx = int(moments['m10'] / moments['m00'])
     cy = int(moments['m01'] / moments['m00'])
     return cx, cy
-
-    # cap = cv2.VideoCapture('test2.mp4')
-    cap = cv2.VideoCapture(0)
-
-    while cap.isOpened():
-        ret, frame = cap.read()
-
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        cv2.imshow('frame', gray)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    cap.release()
-    cv2.destroyAllWindows()
-
 
 if __name__ == '__main__':
     main()
