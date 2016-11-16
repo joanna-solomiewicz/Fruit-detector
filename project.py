@@ -10,6 +10,8 @@ image_name = 'ball.jpg'
 blures = 10
 threshold1 = 30
 threshold2 = 200
+minArea = 300.0
+approximation = 10
 
 def main():
     cap = cv2.VideoCapture(0)
@@ -21,9 +23,9 @@ def main():
         balls = find_balls(gray)
 
         for ball in balls:
-            draw_ball(gray, ball)
+            draw_ball(frame, ball)
 
-        cv2.imshow('frame', gray)
+        cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -31,14 +33,13 @@ def main():
     cv2.destroyAllWindows()
 
 
-
-
-def draw_ball(img2, ball):
-    cv2.circle(img2, (int(ball[0]), int(ball[1])), int(ball[2]), (255, 0, 0), 2)
-    cv2.circle(img2, (int(ball[0]), int(ball[1])), 2, (0, 0, 255), -1)
+def draw_ball(img, ball):
+    cv2.circle(img, (int(ball[0]), int(ball[1])), int(ball[2]), (255, 0, 0), 2)
+    cv2.circle(img, (int(ball[0]), int(ball[1])), 2, (0, 0, 255), -1)
 
 
 def find_balls(img):
+    # cv2.equalizeHist(img, img);
     for i in range(blures):
         img = cv2.medianBlur(img, 5)
 
@@ -65,12 +66,11 @@ def find_balls(img):
 
     for contour in contours:
         area = cv2.contourArea(contour)
-        if area <= 300.0:
+        if area <= minArea:
             continue
-        x, y, w, h = cv2.boundingRect(contour)
+        _, _, w, h = cv2.boundingRect(contour)
         r = math.sqrt(area / math.pi)
 
-        approximation = 10
         if w - approximation <= h <= w + approximation:
             d = (w + h) / 2
             if d - approximation <= 2 * r <= d + approximation:
@@ -84,6 +84,7 @@ def centre(contour):
     cx = int(moments['m10'] / moments['m00'])
     cy = int(moments['m01'] / moments['m00'])
     return cx, cy
+
 
 if __name__ == '__main__':
     main()
