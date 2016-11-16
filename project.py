@@ -43,6 +43,9 @@ def find_balls(img):
     for i in range(blures):
         img = cv2.medianBlur(img, 5)
 
+
+    cv2.imshow('blur', img)
+
     # skimage.io.imshow(img)
     # skimage.io.show()
     img = cv2.Canny(img, threshold1, threshold2)
@@ -51,16 +54,15 @@ def find_balls(img):
     # img = cv2.dilate(img,kernel,iterations = 3)
     # cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
 
-    # skimage.io.imshow(img)
-    # skimage.io.show()
+    cv2.imshow('canny', img)
+
+    img2 = img[:]
 
     img, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
-    # img2 = cv2.imread(image_name, 1)
     # cv2.drawContours(img2, contours, -1, (0, 255, 0), 3)
-    #
-    # skimage.io.imshow(img2)
-    # skimage.io.show()
+
+    cv2.imshow('edges', img2)
 
     balls = []
 
@@ -75,7 +77,7 @@ def find_balls(img):
             d = (w + h) / 2
             if d - approximation <= 2 * r <= d + approximation:
                 x, y = centre(contour)
-                balls.append((x, y, r))
+                balls.append((x, y, r, area))
     return balls
 
 
