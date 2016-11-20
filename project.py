@@ -13,14 +13,16 @@ threshold2 = 200
 minArea = 300.0
 approximation = 10
 
+
 def main():
-    cap = cv2.VideoCapture(0)
+    video_stream = cv2.VideoCapture(0)
 
-    while cap.isOpened():
-        ret, frame = cap.read()
+    while video_stream.isOpened():
+        is_success, frame = video_stream.read()
+        if not is_success:
+            break
 
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        balls = find_balls(gray)
+        balls = find_balls(frame)
 
         for ball in balls:
             draw_ball(frame, ball)
@@ -29,7 +31,7 @@ def main():
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
-    cap.release()
+    video_stream.release()
     cv2.destroyAllWindows()
 
 
@@ -39,45 +41,59 @@ def draw_ball(img, ball):
 
 
 def find_balls(img):
-    # cv2.equalizeHist(img, img);
+    balls = []
+
     for i in range(blures):
         img = cv2.medianBlur(img, 5)
 
+    hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
     cv2.imshow('blur', img)
 
-    # skimage.io.imshow(img)
-    # skimage.io.show()
-    img = cv2.Canny(img, threshold1, threshold2)
+    # boundries = [(110, 130)]
+    boundries = [(15, 45), (45, 75), (75, 105), (105, 135), (135, 165), (165, 195), (195, 225)]
 
-    # kernel = np.ones((5, 5), np.uint8)
-    # img = cv2.dilate(img,kernel,iterations = 3)
-    # cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
+    for lower, upper in boundries:
+        lower_bound = (lower, 50, 50)
+        upper_bound = (upper, 255, 255)
 
-    cv2.imshow('canny', img)
+        mask = cv2.inRange(hsv, lower_bound, upper_bound)
+        # mask = cv2.erode(mask, None, iterations=2)
+        # mask = cv2.dilate(mask, None, iterations=2)
 
-    img2 = img[:]
 
-    img, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        cv2.imshow('mask', mask)
 
-    # cv2.drawContours(img2, contours, -1, (0, 255, 0), 3)
+        img = cv2.Canny(mask, threshold1, threshold2)
 
-    cv2.imshow('edges', img2)
+        # kernel = np.ones((5, 5), np.uint8)
+        # img = cv2.dilate(img,kernel,iterations = 3)
+        # cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel)
 
-    balls = []
+        # cv2.imshow('canny', img)
 
-    for contour in contours:
-        area = cv2.contourArea(contour)
-        if area <= minArea:
-            continue
-        _, _, w, h = cv2.boundingRect(contour)
-        r = math.sqrt(area / math.pi)
+        img2 = img[:]
 
-        if w - approximation <= h <= w + approximation:
-            d = (w + h) / 2
-            if d - approximation <= 2 * r <= d + approximation:
-                x, y = centre(contour)
-                balls.append((x, y, r, area))
+        img, contours, hierarchy = cv2.findContours(img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        # cv2.drawContours(img2, contours, -1, (0, 255, 0), 3)
+
+        # cv2.imshow('edges', img2)
+
+
+        for contour in contours:
+            area = cv2.contourArea(contour)
+            if area <= minArea:
+                continue
+            _, _, w, h = cv2.boundingRect(contour)
+            r = math.sqrt(area / math.pi)
+
+            if w - approximation <= h <= w + approximation:
+                d = (w + h) / 2
+                if d - approximation <= 2 * r <= d + approximation:
+                    x, y = centre(contour)
+                    balls.append((x, y, r, area))
+
     return balls
 
 
