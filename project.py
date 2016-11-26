@@ -7,7 +7,7 @@ import skimage.io
 import math
 import numpy as np
 
-image_name = 'i3.jpg'
+image_name = '1.jpg'
 
 blures = 10
 threshold1 = 30

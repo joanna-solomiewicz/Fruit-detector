@@ -20,13 +20,17 @@ class ImageSeparator:
 
     def saturation_separate_objects(self, image):
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        # saturation = [element[1] for row in hsv for element in row]
-        grey = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         saturation = [[element[1] for element in row] for row in hsv]
         saturation = np.asarray(saturation)
-        _, thr = cv2.threshold(saturation, 80, 200, cv2.THRESH_BINARY)
-        cv2.imshow('hsv', hsv)
+        cv2.imshow('sat', saturation)
+        blur = cv2.GaussianBlur(saturation, (5, 5), 0)
+        cv2.imshow('blur', blur)
+        _, thr = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         cv2.imshow('thr', thr)
 
         _, contours, hierarchy = cv2.findContours(thr, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        return contours
+        outer_contours = []
+        for i, contour in enumerate(contours):
+            if hierarchy[0][i][3] == -1:  # only contours without parents (outer ones)
+                outer_contours.append(contour)
+        return outer_contours
