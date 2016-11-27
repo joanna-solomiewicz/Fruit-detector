@@ -32,11 +32,15 @@ class ImageSeparator:
         cv2.imshow('hsv', hsv)
         cv2.imshow('thr', thr)
 
+        image_width, image_height = image.shape[:2]
+        image_area = image_width * image_height
+
         _, contours, hierarchy = cv2.findContours(thr, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         outer_contours = []
         for i, contour in enumerate(contours):
             if hierarchy[0][i][3] == -1:  # only contours without parents (outer ones)
-                outer_contours.append(contour)
+                if cv2.contourArea(contour)/image_area > 0.2:
+                    outer_contours.append(contour)
         return outer_contours
 
     def extract_channel(self, hsv, channel):

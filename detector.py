@@ -11,7 +11,7 @@ class FeatureDetector:
         mask = self.get_mask(contour, image, id)
         mean_val_hsv = self.calculate_mean(image, mask)
 
-        return mean_val_hsv, x, y
+        return mean_val_hsv
 
     def calculate_mean(self, image, mask):
         mean_val = np.uint8(cv2.mean(image, mask=mask)[:3])  # in BGR
