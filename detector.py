@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import math
 import colorsys
 
 
@@ -10,8 +11,10 @@ class FeatureDetector:
     def calculate_features(self, image, contour, id):
         mask = self.get_mask(contour, image, id)
         mean_val_hsv = self.calculate_mean(image, mask)
+        roundness = self.calculate_roundness(contour);
+        roundness2 = self.calculate_roundness2(contour);
 
-        return mean_val_hsv
+        return mean_val_hsv, roundness, roundness2
 
     def calculate_mean(self, image, mask):
         mean_val = np.uint8(cv2.mean(image, mask=mask)[:3])  # in BGR
@@ -33,3 +36,20 @@ class FeatureDetector:
         cx = int(moments['m10'] / moments['m00'])
         cy = int(moments['m01'] / moments['m00'])
         return cx, cy
+
+    def calculate_roundness(self, contour):
+        area = cv2.contourArea(contour)
+        if area > 0:
+            perimeter = cv2.arcLength(contour, True)
+            return (perimeter / (2 * math.sqrt(math.pi * area))) - 1
+        else:
+            return -1
+
+    def calculate_roundness2(self, contour):
+        area = cv2.contourArea(contour)
+        if area > 0:
+            _, enclosing_radius = cv2.minEnclosingCircle(contour)
+            enclosing_area = math.pi * enclosing_radius**2
+            return area/enclosing_area;
+        else:
+            return -1
