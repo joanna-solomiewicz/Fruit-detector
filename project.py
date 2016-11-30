@@ -1,21 +1,13 @@
 import cv2
-from separator import ImageSeparator, ColorBasedImageSeparator
+from separator import ColorBasedImageSeparator
 from detector import FeatureDetector
-from classifier import Classifier
-from classifier import MinMaxEnum
-from classifier import ColorEnum
+from classifiers.apple_classifier import AppleClassifier
+from classifiers.banana_classifier import BananaClassifier
 
-from matplotlib import pyplot as plt
-import skvideo.io
-import skimage.io
-import math
-import numpy as np
-
-image_name = 'img/b1.jpg'
+images = ['a1.jpg', 'b1.jpg']
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
-classifier = Classifier()
 
 fruit_ranges = {
     'red_apple': [
@@ -28,43 +20,30 @@ fruit_ranges = {
 }
 
 fruit_classifiers = {
-    # 'red_apple': RedAppleClassifier,
-    # 'banana': BananaClassifier
+    'red_apple': AppleClassifier(),
+    'banana': BananaClassifier()
 }
 
 
 def main():
-    image = cv2.imread(image_name)
+    for file in images:
+        image = cv2.imread(file)
 
-    for fruit_name, color_range in fruit_ranges.items():
-        contours = separator.color_separate_objects(image, color_range)
-        for i, contour in enumerate(contours):
-            features = detector.calculate_features(image, contour, i)
-            # if fruit_classifiers.get(fruit_name).classify(features):
-            #     draw(contours, fruit_name)
-            cv2.drawContours(image, [contour], -1, (0, 255, 0), 1)
+        for fruit_name, color_range in fruit_ranges.items():
+            contours = separator.color_separate_objects(image, color_range)
+            for i, contour in enumerate(contours):
+                mean_hsv, roundness, roundness2 = detector.calculate_features(image, contour, i)
+                features = [mean_hsv, roundness, roundness2]
+                if fruit_classifiers.get(fruit_name).is_class(features):
+                    print('I found ' + fruit_name)
+                    cv2.drawContours(image, [contour], -1, (0, 255, 0), 1)
+                    # draw(contours, fruit_name)
 
-    cv2.imshow('saturation-serparation', image)
+        cv2.imshow('saturation-serparation', image)
 
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 if __name__ == '__main__':
     main()
 
-
-
-
-
-    # video_stream = cv2.VideoCapture(0)
-    #
-    # while video_stream.isOpened():
-    #     is_success, frame = video_stream.read()
-    #     if not is_success:
-    #         break
-    #
-    #     cv2.imshow('frame', frame)
-    #     if cv2.waitKey(1) & 0xFF == ord('q'):
-    #         break
-    #
-    # video_stream.release()

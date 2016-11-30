@@ -11,8 +11,8 @@ class FeatureDetector:
     def calculate_features(self, image, contour, id):
         mask = self.get_mask(contour, image, id)
         mean_val_hsv = self.calculate_mean(image, mask)
-        roundness = self.calculate_roundness(contour);
-        roundness2 = self.calculate_roundness2(contour);
+        roundness = self.calculate_roundness(contour)
+        roundness2 = self.calculate_roundness2(contour)
 
         return mean_val_hsv, roundness, roundness2
 

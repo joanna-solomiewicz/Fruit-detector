@@ -8,9 +8,13 @@ class ColorEnum:
 
 class Classifier:
     def __init__(self):
-        self.fruit = []
-        self.color = []
+        self.name = ''
+        self.roundness = []
+        self.mean_hue = []
 
-    def setColor(self, fruit, min, max):
-        self.fruit.append(fruit)
-        self.color.append([min, max])
+    def is_class(self, features):
+        if self.mean_hue[0] <= features[0][0] <= self.mean_hue[1] and self.roundness[0] <= features[2] <= self.roundness[1]:
+            return 1
+        else:
+            return 0
+
