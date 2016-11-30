@@ -50,6 +50,6 @@ class FeatureDetector:
         if area > 0:
             _, enclosing_radius = cv2.minEnclosingCircle(contour)
             enclosing_area = math.pi * enclosing_radius**2
-            return area/enclosing_area;
+            return area/enclosing_area
         else:
             return -1
