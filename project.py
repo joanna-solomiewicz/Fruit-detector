@@ -4,7 +4,7 @@ from detector import FeatureDetector
 from classifiers.apple_classifier import AppleClassifier
 from classifiers.banana_classifier import BananaClassifier
 
-images = ['a1.jpg', 'b1.jpg']
+images = ['img/czj2.jpg', 'img/b1.jpg']
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
