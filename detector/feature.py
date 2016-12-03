@@ -1,4 +1,4 @@
 class Feature:
-    def __init__(self, mean_color, roundness):
+    def __init__(self, mean_color, hu_moments):
         self.mean_color = mean_color
-        self.roundness = roundness
+        self.hu_moments = hu_moments

@@ -12,9 +12,9 @@ class Classifier:
         self.roundness = []
         self.mean_hue = []
 
-    def is_class(self, features):
-        if self.mean_hue[0] <= features[0][0] <= self.mean_hue[1] and self.roundness[0] <= features[2] <= self.roundness[1]:
+    def is_class(self, feature):
+        if self.mean_hue[0] <= feature.mean_color[0] <= self.mean_hue[1] \
+                and self.roundness[0] <= feature.roundness <= self.roundness[1]:
             return 1
         else:
             return 0
-

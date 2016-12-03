@@ -11,9 +11,8 @@ class FeatureDetector:
     def calculate_features(self, image, contour):
         mask = self.get_mask(contour, image)
         mean_val_hsv = self.calculate_mean(image, mask)
-        roundness = self.calculate_roundness(contour)
         hu_moments = self.calculate_hu_moments(mask)
-        return Feature(mean_val_hsv, roundness)
+        return Feature(mean_val_hsv, hu_moments)
 
     def calculate_mean(self, image, mask):
         mean_val = np.uint8(cv2.mean(image, mask=mask)[:3])  # in BGR
@@ -39,11 +38,11 @@ class FeatureDetector:
         cy = int(moments['m01'] / moments['m00'])
         return cx, cy
 
-    def calculate_roundness(self, contour):
-        area = cv2.contourArea(contour)
-        if area > 0:
-            _, enclosing_radius = cv2.minEnclosingCircle(contour)
-            enclosing_area = math.pi * enclosing_radius**2
-            return area/enclosing_area
-        else:
-            return -1
+    # def calculate_roundness(self, contour):
+    #     area = cv2.contourArea(contour)
+    #     if area > 0:
+    #         _, enclosing_radius = cv2.minEnclosingCircle(contour)
+    #         enclosing_area = math.pi * enclosing_radius ** 2
+    #         return area / enclosing_area
+    #     else:
+    #         return -1

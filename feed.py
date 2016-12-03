@@ -16,22 +16,31 @@ def main():
     image_file_names = get_jpg_from_directory(directory_path)
 
     connection = sqlite3.connect(db_path)
-    # featureRepository = FeatureRepository(connection)
-    # featureRepository.create_table_if_not_exists()
-    #
-    # feautre1 = Feature((0, 0, 0), 0.5)
-    # featureRepository.add(feautre1)
 
     separator = BlackBackgroundImageSeparator()
     detector = FeatureDetector()
     feature_repository = FeatureRepository(connection)
 
-    for file_name in image_file_names:
-        image = cv2.imread(file_name)
-        contour = separator.separate(image)
-        feature = detector.calculate_features(image, contour)
-        feature_repository.add(feature)
+    feature_repository.create_table_if_not_exists()
+    # feautre1 = Feature((10, 12, 13), [2.3, 1, 2, 3, 4, 1, 1])
+    # feature_repository.add(feautre1, 'banana')
+    # features = feature_repository.find_all()
 
+    for file_name in image_file_names:
+        image = cv2.imread(directory_path + "/" + file_name)
+        if image is None:
+            continue
+
+        contour = separator.separate(image)
+
+        cv2.imshow(file_name, detector.get_mask(contour, image))
+
+        feature = detector.calculate_features(image, contour)
+        fruit_name = file_name.split('.')[0]
+        feature_repository.add(feature, fruit_name)
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
     connection.close()
 
 

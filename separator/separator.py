@@ -122,6 +122,17 @@ class ImageSeparator:
 class BlackBackgroundImageSeparator:
     def separate(self, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        _, thr = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)
+        _, thr = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
+        cv2.imshow("aa", thr)
         _, contours, hierarchy = cv2.findContours(thr, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-        return contours[0]
+
+        image_width, image_height = image.shape[:2]
+        image_area = image_width * image_height
+        correct_contours = []
+        for contour in contours:
+            if cv2.contourArea(contour) > 0.1 * image_area:
+                correct_contours.append(contour)
+        if contours.__len__() > 0:
+            return correct_contours[0]
+        else:
+            return None
