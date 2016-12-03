@@ -1,4 +1,4 @@
-from classifier import Classifier
+from classifiers.classifier import Classifier
 
 
 class AppleClassifier(Classifier):

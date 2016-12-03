@@ -53,13 +53,6 @@ class ColorBasedImageSeparator:
         return outer_contours
 
 
-
-
-
-
-
-
-
 class ImageSeparator:
     def __init__(self):
         self.threshold1 = 30
@@ -124,3 +117,11 @@ class ImageSeparator:
 
     def extract_channel(self, hsv, channel):
         return np.asarray([[element[channel] for element in row] for row in hsv])
+
+
+class BlackBackgroundImageSeparator:
+    def separate(self, image):
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        _, thr = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)
+        _, contours, hierarchy = cv2.findContours(thr, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        return contours[0]
