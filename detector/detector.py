@@ -12,12 +12,17 @@ class FeatureDetector:
         mask = self.get_mask(contour, image)
         mean_val_hsv = self.calculate_mean(image, mask)
         roundness = self.calculate_roundness(contour)
+        hu_moments = self.calculate_hu_moments(mask)
         return Feature(mean_val_hsv, roundness)
 
     def calculate_mean(self, image, mask):
         mean_val = np.uint8(cv2.mean(image, mask=mask)[:3])  # in BGR
         mean_val_hsv = cv2.cvtColor(np.uint8([[mean_val]]), cv2.COLOR_BGR2HSV)[0][0]
         return mean_val_hsv
+
+    def calculate_hu_moments(self, mask):
+        hu_moments = cv2.HuMoments(cv2.moments(mask)).flatten()
+        return hu_moments
 
     def get_mask(self, contour, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)

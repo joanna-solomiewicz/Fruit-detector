@@ -32,8 +32,8 @@ def main():
         for fruit_name, color_range in fruit_ranges.items():
             contours = separator.color_separate_objects(image, color_range)
             for i, contour in enumerate(contours):
-                mean_hsv, roundness, roundness2 = detector.calculate_features(image, contour, i)
-                features = [mean_hsv, roundness, roundness2]
+                mean_hsv, roundness, roundness2, hu_moments = detector.calculate_features(image, contour, i)
+                features = [mean_hsv, roundness, roundness2, hu_moments]
                 if fruit_classifiers.get(fruit_name).is_class(features):
                     print('I found ' + fruit_name)
                     cv2.drawContours(image, [contour], -1, (0, 255, 0), 1)
