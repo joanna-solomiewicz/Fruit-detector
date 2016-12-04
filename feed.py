@@ -6,6 +6,7 @@ from separator.separator import BlackBackgroundImageSeparator
 from detector.detector import FeatureDetector
 from detector.feature import Feature
 from repository.repository import FeatureRepository
+from classifiers.classifier import Classifier
 import sqlite3
 
 
@@ -20,11 +21,12 @@ def main():
     separator = BlackBackgroundImageSeparator()
     detector = FeatureDetector()
     feature_repository = FeatureRepository(connection)
+    classifier = Classifier()
 
     feature_repository.create_table_if_not_exists()
     # feautre1 = Feature((10, 12, 13), [2.3, 1, 2, 3, 4, 1, 1])
     # feature_repository.add(feautre1, 'banana')
-    # features = feature_repository.find_all()
+    database_features, database_fruit_names = feature_repository.find_all()
 
     for file_name in image_file_names:
         image = cv2.imread(directory_path + "/" + file_name)
@@ -35,9 +37,10 @@ def main():
 
         cv2.imshow(file_name, detector.get_mask(contour, image))
 
-        feature = detector.calculate_features(image, contour)
+        detected_feature = detector.calculate_features(image, contour)
+        classifier.classify(detected_feature, database_features, database_fruit_names)
         fruit_name = file_name.split('.')[0]
-        feature_repository.add(feature, fruit_name)
+        feature_repository.add(detected_feature, fruit_name)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()

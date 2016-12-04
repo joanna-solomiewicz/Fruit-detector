@@ -61,12 +61,14 @@ class FeatureRepository:
 
             #TODO retun map fruit -> list of features
             features = []
+            fruit_names = []
             for row in rows:
                 mean_hsv = (row[2], row[3], row[4])
                 hu_moments = row[5:12]
                 features.append(Feature(mean_hsv, hu_moments))
+                fruit_names.append(row[1])
 
-            return features
+            return features, fruit_names
 
             self._connection.commit()
         except Exception:
