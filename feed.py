@@ -2,7 +2,7 @@ import cv2
 import argparse
 import os
 import sys
-from separator.separator import BlackBackgroundImageSeparator
+from separator.separator import BinaryImageSeparator
 from detector.detector import FeatureDetector
 from repository.repository import FeatureRepository
 import sqlite3
@@ -14,7 +14,7 @@ def main():
     image_file_names = get_jpg_from_directory(directory_path)
     connection = sqlite3.connect(db_path)
 
-    separator = BlackBackgroundImageSeparator()
+    separator = BinaryImageSeparator()
     detector = FeatureDetector()
     feature_repository = FeatureRepository(connection)
 
@@ -30,6 +30,7 @@ def main():
         # cv2.imshow(file_name, detector._get_mask(contour, image))
         feature = detector.calculate_features(image, contour)
         color_ranges = detector.get_color_ranges_in_contour(contour, image)
+        print(color_ranges)
         fruit_name = file_name.split('.')[0]
         feature_repository.add(feature, fruit_name)
 

@@ -8,18 +8,11 @@ class ColorBasedImageSeparator:
 
     def color_separate_objects(self, image, color_ranges):
         assert isinstance(color_ranges, list)
-
-        blurred = cv2.GaussianBlur(image, (11, 11), 0)
+        blurred = cv2.GaussianBlur(image, (5, 5), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-
-        summary_mask = self._get_mask_for_ranges(hsv, color_ranges)
-
-        summary_mask = cv2.erode(summary_mask, None, iterations=1)
-        summary_mask = cv2.dilate(summary_mask, None, iterations=1)
-        cv2.imshow('summary_filter', summary_mask)
-
+        summary_mask = self._get_mask_from_ranges(hsv, color_ranges)
+        summary_mask = cv2.morphologyEx(summary_mask, cv2.MORPH_OPEN, None, iterations=2)
         _, contours, hierarchy = cv2.findContours(summary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
         return self._get_outer_contours_of_enough_size(contours, hierarchy, image)
 
         # gray = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
@@ -35,7 +28,7 @@ class ColorBasedImageSeparator:
         #
         # return contours
 
-    def _get_mask_for_ranges(self, hsv_image, color_ranges):
+    def _get_mask_from_ranges(self, hsv_image, color_ranges):
         summary_mask = np.zeros(hsv_image.shape[0:2], np.uint8)
         for i, color_range in enumerate(color_ranges):
             mask = cv2.inRange(hsv_image, color_range[0], color_range[1])
@@ -51,6 +44,24 @@ class ColorBasedImageSeparator:
                 if cv2.contourArea(contour) / image_area > self.contour_to_image_size_ratio:
                     outer_contours.append(contour)
         return outer_contours
+
+
+class BinaryImageSeparator:
+    def separate(self, image):
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        _, thr = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
+        _, contours, hierarchy = cv2.findContours(thr, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+        image_width, image_height = image.shape[:2]
+        image_area = image_width * image_height
+        correct_contours = []
+        for contour in contours:
+            if cv2.contourArea(contour) > 0.1 * image_area:
+                correct_contours.append(contour)
+        if contours.__len__() > 0:
+            return correct_contours[0]
+        else:
+            return None
 
 
 class ImageSeparator:
@@ -130,21 +141,3 @@ class ImageSeparator:
 
     def extract_channel(self, hsv, channel):
         return np.asarray([[element[channel] for element in row] for row in hsv])
-
-
-class BlackBackgroundImageSeparator:
-    def separate(self, image):
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        _, thr = cv2.threshold(gray, 10, 255, cv2.THRESH_BINARY)
-        _, contours, hierarchy = cv2.findContours(thr, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-        image_width, image_height = image.shape[:2]
-        image_area = image_width * image_height
-        correct_contours = []
-        for contour in contours:
-            if cv2.contourArea(contour) > 0.1 * image_area:
-                correct_contours.append(contour)
-        if contours.__len__() > 0:
-            return correct_contours[0]
-        else:
-            return None

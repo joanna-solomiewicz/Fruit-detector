@@ -18,7 +18,7 @@ fruit_ranges = {
         ((168, 100, 50), (179, 255, 255)),
     ],
     'banana': [
-        ((13, 80, 50), (27, 255, 255))
+        ((8, 80, 80), (28, 255, 255))
     ]
 }
 
@@ -26,7 +26,7 @@ fruit_ranges = {
 def main():
     args = get_args()
     # image_path = get_image_path(args)
-    image_path = 'img/inne/b3.jpg'
+    image_path = 'img/inne/o4.jpg'
     db_path = get_db_path(args)
     connection = sqlite3.connect(db_path)
     image = cv2.imread(image_path)
