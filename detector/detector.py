@@ -9,40 +9,63 @@ class FeatureDetector:
         super().__init__()
 
     def calculate_features(self, image, contour):
-        mask = self.get_mask(contour, image)
-        mean_val_hsv = self.calculate_mean(image, mask)
-        hu_moments = self.calculate_hu_moments(mask)
+        mask = self._get_mask(contour, image)
+        mean_val_hsv = self._calculate_mean(image, mask)
+        hu_moments = self._calculate_hu_moments(mask)
         return Feature(mean_val_hsv, hu_moments)
 
-    def calculate_mean(self, image, mask):
+    def _calculate_mean(self, image, mask):
         mean_val = np.uint8(cv2.mean(image, mask=mask)[:3])  # in BGR
         mean_val_hsv = cv2.cvtColor(np.uint8([[mean_val]]), cv2.COLOR_BGR2HSV)[0][0]
         return mean_val_hsv
 
-    def calculate_hu_moments(self, mask):
+    def _calculate_hu_moments(self, mask):
         hu_moments = cv2.HuMoments(cv2.moments(mask)).flatten()
         return hu_moments
 
-    def get_mask(self, contour, image):
+    def _get_mask(self, contour, image):
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         mask = np.zeros(gray.shape, np.uint8)
         cv2.drawContours(mask, [contour], -1, 255, -1)
         return mask
 
-    def extract_channel(self, hsv, channel):
+    def _extract_channel(self, hsv, channel):
         return np.asarray([[element[channel] for element in row] for row in hsv])
 
-    def centre(contour):
-        moments = cv2.moments(contour)
-        cx = int(moments['m10'] / moments['m00'])
-        cy = int(moments['m01'] / moments['m00'])
-        return cx, cy
+    def get_color_ranges_in_contour(self, contour, image):
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        hue = self._extract_channel(hsv, 0)
+        mask = self._get_mask(contour, image)
+        hist = cv2.calcHist([hue], [0], mask, [180], [0, 179])
+        all_pixels_number = sum(hist)[0]
+        self._filter_hist(hist, 0.001, all_pixels_number)
+        ranges = self._get_ranges(hist)
+        self._filter_ranges(ranges, hist, 0.01, all_pixels_number)
+        return ranges
 
-    # def calculate_roundness(self, contour):
-    #     area = cv2.contourArea(contour)
-    #     if area > 0:
-    #         _, enclosing_radius = cv2.minEnclosingCircle(contour)
-    #         enclosing_area = math.pi * enclosing_radius ** 2
-    #         return area / enclosing_area
-    #     else:
-    #         return -1
+    def _filter_hist(self, hist, factor, all_pixels_number):
+        for i, v in enumerate(hist):
+            if v[0] < factor * all_pixels_number:
+                hist[i][0] = 0
+
+    def _get_ranges(self, hist):
+        ranges = []
+        in_range = False
+        start = 0
+        for i, v in enumerate(hist):
+            if v > 0 and in_range is False:
+                in_range = True
+                start = i
+            elif (v == 0 or i == hist.size - 1) and in_range is True:
+                ranges.append((start, i))
+                in_range = False
+        return ranges
+
+    def _filter_ranges(self, ranges, hist, factor, all_pixels_number):
+        for r in ranges[:]:
+            if r[1] - r[0] < 5:
+                range_pixels = 0
+                for i in range(r[0], r[1] + 1):
+                    range_pixels += hist[i][0]
+                if range_pixels < factor * all_pixels_number:
+                    ranges.remove(r)

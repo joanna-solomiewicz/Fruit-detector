@@ -2,9 +2,8 @@ import cv2
 import argparse
 import os
 import sys
-from separator.separator import BlackBackgroundImageSeparator
+from separator.separator import BinaryImageSeparator
 from detector.detector import FeatureDetector
-from detector.feature import Feature
 from repository.repository import FeatureRepository
 from classifiers.classifier import Classifier
 import sqlite3
@@ -15,17 +14,14 @@ def main():
     directory_path = get_directory_path(args)
     db_path = get_db_path(args)
     image_file_names = get_jpg_from_directory(directory_path)
-
     connection = sqlite3.connect(db_path)
 
-    separator = BlackBackgroundImageSeparator()
+    separator = BinaryImageSeparator()
     detector = FeatureDetector()
     feature_repository = FeatureRepository(connection)
     classifier = Classifier()
 
     feature_repository.create_table_if_not_exists()
-    # feautre1 = Feature((10, 12, 13), [2.3, 1, 2, 3, 4, 1, 1])
-    # feature_repository.add(feautre1, 'banana')
     database_features, database_fruit_names = feature_repository.find_all()
 
     for file_name in image_file_names:
@@ -34,16 +30,23 @@ def main():
             continue
 
         contour = separator.separate(image)
-
-        cv2.imshow(file_name, detector.get_mask(contour, image))
-
+        # delete later
+        # cv2.imshow(file_name, detector._get_mask(contour, image))
         detected_feature = detector.calculate_features(image, contour)
+        color_ranges = detector.get_color_ranges_in_contour(contour, image)
+        print(color_ranges)
         classifier.classify(detected_feature, database_features, database_fruit_names)
         fruit_name = file_name.split('.')[0]
         feature_repository.add(detected_feature, fruit_name)
 
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+    # features = feature_repository.find_all()
+    # for f in features:
+    #     print(f.mean_color)
+    #     print(f.hu_moments)
+
     connection.close()
 
 
