@@ -45,7 +45,7 @@ class FeatureRepository:
                 'INSERT INTO features '
                 '(fruit, mean_color_h, mean_color_s, mean_color_v, hu_1, hu_2, hu_3, hu_4, hu_5, hu_6, hu_7) '
                 'VALUES(?,?,?,?,?,?,?,?,?,?,?)',
-                (fruit_name, feature.mean_color[0], feature.mean_color[1], feature.mean_color[2],
+                (fruit_name, int(feature.mean_color[0]), int(feature.mean_color[1]), int(feature.mean_color[2]),
                  feature.hu_moments[0], feature.hu_moments[1], feature.hu_moments[2],
                  feature.hu_moments[3], feature.hu_moments[4], feature.hu_moments[5], feature.hu_moments[6])
             )
@@ -63,7 +63,7 @@ class FeatureRepository:
             features = []
             for row in rows:
                 mean_hsv = (row[2], row[3], row[4])
-                hu_moments = row[5:11]
+                hu_moments = row[5:12]
                 features.append(Feature(mean_hsv, hu_moments))
 
             return features
