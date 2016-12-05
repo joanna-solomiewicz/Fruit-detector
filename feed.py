@@ -39,8 +39,8 @@ def main():
         fruit_name = file_name.split('.')[0]
         feature_repository.add(detected_feature, fruit_name)
 
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     # features = feature_repository.find_all()
     # for f in features:
