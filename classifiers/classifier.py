@@ -12,7 +12,7 @@ class Classifier:
         knn.train(correct_database_features, cv2.ml.ROW_SAMPLE, correct_database_fruit_names)
         correct_features = self.convert_features_from_detector(detected_features)
         ret, results, neighbours, dist = knn.findNearest(correct_features, 3)
-        return results
+        return results, dist
 
     def convert_feature_to_list(self, feature):
         correct_features = []

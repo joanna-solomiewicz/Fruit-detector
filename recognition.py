@@ -3,10 +3,7 @@ import argparse
 import sqlite3
 import sys
 from separator.separator import ColorBasedImageSeparator
-from separator.separator import ImageSeparator
 from detector.detector import FeatureDetector
-from classifiers.apple_classifier import AppleClassifier
-from classifiers.banana_classifier import BananaClassifier
 from classifiers.classifier import Classifier
 from repository.repository import FeatureRepository
 import numpy as np
@@ -41,15 +38,16 @@ def main():
     contours = separator.color_separate_objects(image, fruit_ranges.get('banana'))
     cv2.drawContours(image, contours, -1, (0, 255, 0), 1)
     database_features, database_fruit_names = feature_repository.find_all()
-    detected_feature = []
+    detected_features = []
     for contour in contours:
-        detected_feature.append(detector.calculate_features(image, contour))
+        detected_features.append(detector.calculate_features(image, contour))
     if contours.__len__() > 0:
-        classified_contours_numbers = classifier.classify(detected_feature, database_features, database_fruit_names)
+        classified_contours_numbers, distances = classifier.classify(detected_features, database_features, database_fruit_names)
         classified_contours_names = []
         for i, classified_contours_number in enumerate(classified_contours_numbers):
             classified_contours_names.append(classifier.number_to_string_dictionary[classified_contours_number[0]])
             print('Found: ' + classified_contours_names[i])
+            print(distances[i])
     else:
         print('No fruits found')
 
