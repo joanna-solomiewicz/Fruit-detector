@@ -10,9 +10,9 @@ class Classifier:
         correct_database_features, correct_database_fruit_names = self.convert_features_from_database(database_features, database_fruit_names)
         knn = cv2.ml.KNearest_create()
         knn.train(correct_database_features, cv2.ml.ROW_SAMPLE, correct_database_fruit_names)
-        correct_features = self.convert_feature_to_list(detected_features)
-        # ret, results, neighbours, dist = knn.findNearest(correct_features, 3)
-        return 111
+        correct_features = self.convert_features_from_detector(detected_features)
+        ret, results, neighbours, dist = knn.findNearest(correct_features, 3)
+        return results
 
     def convert_feature_to_list(self, feature):
         correct_features = []
@@ -22,6 +22,12 @@ class Classifier:
             correct_features.append(feature.hu_moments[i])
 
         return np.asarray(correct_features, dtype=np.float32)
+
+    def convert_features_from_detector(self, detected_features):
+        correct_detected_features = []
+        for detected_feature in detected_features:
+            correct_detected_features.append(self.convert_feature_to_list(detected_feature))
+        return np.asarray(correct_detected_features, dtype=np.float32)
 
     def convert_features_from_database(self, database_features, database_fruit_names):
         correct_database_features = []
