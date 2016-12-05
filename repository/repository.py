@@ -8,35 +8,114 @@ class StoreException(Exception):
         self.errors = errors
 
 
-class FeatureRepository:
+def init_database(connection):
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS fruits'
+            '('
+            'name VARCHAR(255) PRIMARY KEY'
+            ' )'
+        )
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS features'
+            '('
+            'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+            'fruit VARCHAR(255) REFERENCES fruits(name) NOT NULL,'
+            'mean_color_h INTEGER NOT NULL,'
+            'mean_color_s INTEGER NOT NULL,'
+            'mean_color_v INTEGER NOT NULL,'
+            'hu_1 DOUBLE NOT NULL,'
+            'hu_2 DOUBLE NOT NULL,'
+            'hu_3 DOUBLE NOT NULL,'
+            'hu_4 DOUBLE NOT NULL,'
+            'hu_5 DOUBLE NOT NULL,'
+            'hu_6 DOUBLE NOT NULL,'
+            'hu_7 DOUBLE NOT NULL'
+            ')'
+        )
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS ranges'
+            '('
+            'id INTEGER PRIMARY KEY AUTOINCREMENT,'
+            'fruit VARCHAR(255) REFERENCES fruits(name) NOT NULL,'
+            'min_hue INTEGER NOT NULL,'
+            'max_hue INTEGER NOT NULL'
+            ')'
+        )
+
+        connection.commit()
+    except Exception:
+        raise StoreException('Error while creating features table')
+
+
+class FruitRepository:
     def __init__(self, connection):
         self._connection = connection
 
-    def create_table_if_not_exists(self):
+    def add_if_not_exist(self, fruit_name):
+        if not self.exists(fruit_name):
+            self.add(fruit_name)
+
+    def add(self, fruit_name):
         try:
             cursor = self._connection.cursor()
-            table_name = 'features'
             cursor.execute(
-                'CREATE TABLE IF NOT EXISTS ' + table_name +
-                '('
-                'id INTEGER PRIMARY KEY AUTOINCREMENT,'
-                'fruit VARCHAR(255) NOT NULL,'
-                'mean_color_h INTEGER NOT NULL,'
-                'mean_color_s INTEGER NOT NULL,'
-                'mean_color_v INTEGER NOT NULL,'
-                'hu_1 DOUBLE NOT NULL,'
-                'hu_2 DOUBLE NOT NULL,'
-                'hu_3 DOUBLE NOT NULL,'
-                'hu_4 DOUBLE NOT NULL,'
-                'hu_5 DOUBLE NOT NULL,'
-                'hu_6 DOUBLE NOT NULL,'
-                'hu_7 DOUBLE NOT NULL'
-                ')'
+                'INSERT INTO fruits '
+                '(name)'
+                'VALUES(?)',
+                (fruit_name,)
             )
-
             self._connection.commit()
         except Exception:
-            raise StoreException('Error while creating features table')
+            raise StoreException('Error while adding feature')
+
+    def exists(self, fruit_name):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(
+                'SELECT * FROM fruits '
+                'WHERE name = ?',
+                (fruit_name,)
+            )
+            return not cursor.fetchone() is None
+        except Exception:
+            raise StoreException('Error while finding fruit ' + fruit_name)
+
+    def find_all(self):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute('SELECT * FROM fruits')
+            rows = cursor.fetchall()
+            result = []
+            for row in rows:
+                result.append((row[0], row[1]))
+            return result
+        except Exception:
+            raise StoreException('Error while finding all fruits')
+
+
+class RangeRepository:
+    def __init__(self, connection):
+        self._connection = connection
+
+    def add(self, color_range, fruit_name):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(
+                'INSERT INTO ranges '
+                '(fruit, min_hue, max_hue) '
+                'VALUES(?,?,?)',
+                (fruit_name, int(color_range[0]), int(color_range[1]))
+            )
+            self._connection.commit()
+        except Exception:
+            raise StoreException('Error while adding range')
+
+
+class FeatureRepository:
+    def __init__(self, connection):
+        self._connection = connection
 
     def add(self, feature, fruit_name):
         try:
@@ -59,7 +138,7 @@ class FeatureRepository:
             cursor.execute('SELECT * FROM features')
             rows = cursor.fetchall()
 
-            #TODO retun map fruit -> list of features
+            # TODO retun map fruit -> list of features
             features = []
             fruit_names = []
             for row in rows:
@@ -69,7 +148,5 @@ class FeatureRepository:
                 fruit_names.append(row[1])
 
             return features, fruit_names
-
-            self._connection.commit()
         except Exception:
             raise StoreException('Error while finding all features')
