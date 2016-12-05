@@ -3,38 +3,30 @@ import argparse
 import sqlite3
 import sys
 from separator.separator import ColorBasedImageSeparator
-from separator.separator import ImageSeparator
 from detector.detector import FeatureDetector
-from classifiers.apple_classifier import AppleClassifier
-from classifiers.banana_classifier import BananaClassifier
+from repository.repository import RangeRepository
 import numpy as np
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
 
-fruit_ranges = {
-    'red_apple': [
-        ((0, 100, 50), (17, 255, 255)),
-        ((168, 100, 50), (179, 255, 255)),
-    ],
-    'banana': [
-        ((8, 80, 80), (28, 255, 255))
-    ]
-}
-
-
 def main():
     args = get_args()
     # image_path = get_image_path(args)
-    image_path = 'img/inne/o4.jpg'
+    image_path = 'img/inne/czj1.jpg'
     db_path = get_db_path(args)
     connection = sqlite3.connect(db_path)
+
+    range_repository = RangeRepository(connection)
+    color_ranges, _ = range_repository.find_all()
+    summary_ranges = get_summary_ranges(color_ranges)
+
     image = cv2.imread(image_path)
     if image is None:
         print('Unable to open image.')
         sys.exit()
 
-    contours = separator.color_separate_objects(image, fruit_ranges.get('banana'))
+    contours = separator.color_separate_objects(image, summary_ranges)
     cv2.drawContours(image, contours, -1, (0, 255, 0), 1)
 
     # for fruit_name, color_range in fruit_ranges.items():
@@ -52,6 +44,25 @@ def main():
     cv2.destroyAllWindows()
 
     connection.close()
+
+
+def get_summary_ranges(color_ranges):
+    size = 180
+    range_binary_list = [False] * size
+    for color_range in color_ranges:
+        for i in range(color_range[0], color_range[1]):
+            range_binary_list[i] = True
+    ranges = []
+    in_range = False
+    start = 0
+    for i, v in enumerate(range_binary_list):
+        if v is True and in_range is False:
+            in_range = True
+            start = i
+        elif (v is False or i == size-1) and in_range is True:
+            ranges.append((start, i))
+            in_range = False
+    return ranges
 
 
 def get_args():

@@ -112,6 +112,22 @@ class RangeRepository:
         except Exception:
             raise StoreException('Error while adding range')
 
+    def find_all(self):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute('SELECT * FROM ranges')
+            rows = cursor.fetchall()
+            color_ranges = []
+            names = []
+            for row in rows:
+                fruit_name = row[1]
+                color_range = (row[2], row[3])
+                names.append(fruit_name)
+                color_ranges.append(color_range)
+            return color_ranges, names
+        except Exception:
+            raise StoreException('Error while finding all features')
+
 
 class FeatureRepository:
     def __init__(self, connection):

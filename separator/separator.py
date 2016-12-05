@@ -6,10 +6,11 @@ class ColorBasedImageSeparator:
     def __init__(self):
         self.contour_to_image_size_ratio = 0.01
 
-    def color_separate_objects(self, image, color_ranges):
-        assert isinstance(color_ranges, list)
+    def color_separate_objects(self, image, hue_ranges):
+        assert isinstance(hue_ranges, list)
         blurred = cv2.GaussianBlur(image, (5, 5), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
+        color_ranges = self._generate_color_ranges(hue_ranges)
         summary_mask = self._get_mask_from_ranges(hsv, color_ranges)
         summary_mask = cv2.morphologyEx(summary_mask, cv2.MORPH_OPEN, None, iterations=2)
         _, contours, hierarchy = cv2.findContours(summary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -27,6 +28,12 @@ class ColorBasedImageSeparator:
         # _, contours, hierarchy = cv2.findContours(canny, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         #
         # return contours
+
+    def _generate_color_ranges(self, hue_ranges, min_saturation=80, min_value=80):
+        color_ranges = []
+        for hue_range in hue_ranges:
+            color_ranges.append(((hue_range[0], min_saturation, min_value), (hue_range[1], 255, 255)))
+        return color_ranges
 
     def _get_mask_from_ranges(self, hsv_image, color_ranges):
         summary_mask = np.zeros(hsv_image.shape[0:2], np.uint8)
