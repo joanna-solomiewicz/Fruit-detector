@@ -34,8 +34,9 @@ def main():
         #TODO clean
         database_features, database_fruit_names = feature_repository.find_all()
         classified_contours = classifier.classify(detected_features, database_features, database_fruit_names)
-        for classified_contour in classified_contours:
+        for i, classified_contour in enumerate(classified_contours):
             print('Found: ' + classified_contour)
+            print_name_in_center(contours[i], classified_contour, image)
     else:
         print('No fruits found')
     #TODO delete later
@@ -45,6 +46,23 @@ def main():
     cv2.destroyAllWindows()
 
     connection.close()
+
+
+def print_name_in_center(contour, name, image):
+    centre = get_centre(contour)
+    fontFace = cv2.FONT_HERSHEY_COMPLEX
+    fontScale = 1
+    fontThickness = 1
+    fontSize = cv2.getTextSize(name, fontFace, fontScale, fontThickness)[0]
+    fontOrg = (int(centre[0] - fontSize[0] / 2), int(centre[1] - fontSize[1] / 2))
+    cv2.putText(image, name, fontOrg, fontFace, fontScale, (0, 0, 111), fontThickness)
+
+
+def get_centre(contour):
+    M = cv2.moments(contour)
+    cx = int(M['m10'] / M['m00'])
+    cy = int(M['m01'] / M['m00'])
+    return cx, cy
 
 
 def get_detected_features(contours, image):
@@ -58,8 +76,7 @@ def get_contours_of_fruits(fruit_ranges_map, image):
     contours = []
     for fruit_name, fruit_range in fruit_ranges_map.items():
         objects = separator.color_separate_objects(image, fruit_range)
-        cv2.drawContours(image, objects, -1, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)),
-                         1)
+        cv2.drawContours(image, objects, -1, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), 1)
         contours.extend(objects)
     return contours
 
