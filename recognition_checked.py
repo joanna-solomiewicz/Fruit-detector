@@ -17,14 +17,18 @@ classifier = Classifier()
 
 def main():
     args = get_args()
-    directory = 'img/to_recognize/'
-    image_file_names = get_jpg_from_directory('img/to_recognize/')
+    directory = 'img/recognition/'
+    image_file_names = get_jpg_from_directory('img/recognition')
     db_path = get_db_path(args)
     connection = sqlite3.connect(db_path)
 
     range_repository = RangeRepository(connection)
     color_ranges, _ = range_repository.find_all()
     summary_ranges = get_summary_ranges(color_ranges)
+
+    no_contours_found = 0
+    good_guesses = 0
+    bad_guesses = 0
 
     for image_file_name in image_file_names:
         image = cv2.imread(directory+image_file_name)
@@ -46,21 +50,28 @@ def main():
             for i, classified_contours_number in enumerate(classified_contours_numbers):
                 classified_contours_names.append(classifier.number_to_string_dictionary[classified_contours_number[0]])
                 print('Found: ' + classified_contours_names[i])
-                if classified_contours_names[i] != image_file_name.split('.')[0]:
-                    print('Wrong, it was '+image_file_name.split('.')[0])
+                if classified_contours_names[i] != image_file_name.split(' ')[0]:
+                    print('Wrong, it was '+image_file_name.split(' ')[0])
+                    bad_guesses += 1
                 else:
                     print('Good')
+                    good_guesses += 1
                 print(distances[i])
                 print('')
         else:
             print('No fruits found')
+            no_contours_found += 1
 
         cv2.imshow('result', image)
 
-        cv2.waitKey(0)
+        # cv2.waitKey(0)
         cv2.destroyAllWindows()
 
     connection.close()
+
+    accuracy = 100 * good_guesses/(good_guesses + bad_guesses)
+    print('Percent of good guesses: {}'.format(accuracy))
+    print('Could not find contours in {} images out of {}.'.format(no_contours_found, image_file_names.__len__()))
 
 
 def get_summary_ranges(color_ranges):
@@ -111,7 +122,7 @@ def extract_channel(hsv, channel):
 def get_jpg_from_directory(directory_path):
     jpgFiles = []
     for file in os.listdir(directory_path):
-        if file.endswith(".jpg"):
+        if file.endswith(".JPG"):
             jpgFiles.append(file)
     return jpgFiles
 
