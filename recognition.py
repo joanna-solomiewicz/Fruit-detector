@@ -16,7 +16,7 @@ classifier = Classifier()
 def main():
     args = get_args()
     # image_path = get_image_path(args)
-    image_path = 'img/inne/b2.jpg'
+    image_path = 'img/inne/zj5.jpg'
     db_path = get_db_path(args)
 
     image = cv2.imread(image_path)
@@ -33,12 +33,9 @@ def main():
         detected_features = get_detected_features(contours, image)
         #TODO clean
         database_features, database_fruit_names = feature_repository.find_all()
-        classified_contours_numbers, distances = classifier.classify(detected_features, database_features, database_fruit_names)
-        classified_contours_names = []
-        for i, classified_contours_number in enumerate(classified_contours_numbers):
-            classified_contours_names.append(classifier.number_to_string_dictionary[classified_contours_number[0]])
-            print('Found: ' + classified_contours_names[i])
-            print(distances[i])
+        classified_contours = classifier.classify(detected_features, database_features, database_fruit_names)
+        for classified_contour in classified_contours:
+            print('Found: ' + classified_contour)
     else:
         print('No fruits found')
     #TODO delete later
