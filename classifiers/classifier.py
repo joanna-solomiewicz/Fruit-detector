@@ -18,13 +18,13 @@ class Classifier:
         knn_color.train(correct_database_features_color, cv2.ml.ROW_SAMPLE, correct_database_fruit_names)
         ret_color, results_color, neighbours_color, dist_color = knn_color.findNearest(correct_features_color, 2)
 
-        neighbours = []
         results = []
         for i in range(detected_features.__len__()):
-            for neighbour in neighbours_hu[i]:
-                neighbours.append(neighbour)
-            for neighbour in neighbours_color[i]:
-                neighbours.append(neighbour)
+            neighbours = []
+            for neighbour_hu in neighbours_hu[i]:
+                neighbours.append(neighbour_hu)
+            for neighbour_color in neighbours_color[i]:
+                neighbours.append(neighbour_color)
             fruit = self.number_to_string_dictionary[self.most_common(neighbours)].split('_')[0]
             results.append(fruit)
 
