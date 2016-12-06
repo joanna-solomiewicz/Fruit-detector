@@ -3,9 +3,13 @@ import argparse
 import os
 import sys
 from separator.separator import BinaryImageSeparator
-from detector.detector import FeatureDetector
+from detector.detector import FeatureDetector, RangeDetector
 from repository.repository import FruitRepository, FeatureRepository, RangeRepository, init_database
 import sqlite3
+
+separator = BinaryImageSeparator()
+feature_detector = FeatureDetector()
+range_detector = RangeDetector()
 
 
 def main():
@@ -13,11 +17,9 @@ def main():
     directory_path = get_directory_path(args)
     db_path = get_db_path(args)
     image_file_names = get_jpg_from_directory(directory_path)
+
     connection = sqlite3.connect(db_path)
     init_database(connection)
-
-    separator = BinaryImageSeparator()
-    detector = FeatureDetector()
     fruit_repository = FruitRepository(connection)
     feature_repository = FeatureRepository(connection)
     range_repository = RangeRepository(connection)
@@ -26,27 +28,22 @@ def main():
         image = cv2.imread(directory_path + "/" + file_name)
         if image is None:
             continue
-
-        contour = separator.separate(image)
-        # delete later
-        # cv2.imshow(file_name, detector._get_mask(contour, image))
-        feature = detector.calculate_features(image, contour)
-        color_ranges = detector.get_color_ranges_in_contour(contour, image)
-        print(color_ranges)
         fruit_name = file_name.split('.')[0]
         fruit_repository.add_if_not_exist(fruit_name)
+
+        contour = separator.separate(image)
+
+        feature = feature_detector.calculate_features(image, contour)
         feature_repository.add(feature, fruit_name)
+
+        color_ranges = range_detector.get_color_ranges_in_contour(contour, image)
         for color_range in color_ranges:
             range_repository.add(color_range, fruit_name)
 
+    #TODO delete later
+    #     cv2.imshow(file_name, detector._get_mask(contour, image))
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-
-    # features = feature_repository.find_all()
-    # for f in features:
-    #     print(f.mean_color)
-    #     print(f.hu_moments)
-
     connection.close()
 
 
@@ -75,7 +72,7 @@ def get_db_path(args):
 def get_jpg_from_directory(directory_path):
     jpgFiles = []
     for file in os.listdir(directory_path):
-        if file.endswith(".jpg"):
+        if file.endswith(".jpg") or file.endswith(".JPG"):
             jpgFiles.append(file)
     return jpgFiles
 

@@ -4,12 +4,20 @@ import math
 from detector.feature import Feature
 
 
-class FeatureDetector:
-    def __init__(self):
-        super().__init__()
+def extract_channel(hsv, channel):
+    return np.asarray([[element[channel] for element in row] for row in hsv])
 
+
+def get_mask(contour, image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    mask = np.zeros(gray.shape, np.uint8)
+    cv2.drawContours(mask, [contour], -1, 255, -1)
+    return mask
+
+
+class FeatureDetector:
     def calculate_features(self, image, contour):
-        mask = self._get_mask(contour, image)
+        mask = get_mask(contour, image)
         mean_val_hsv = self._calculate_mean(image, mask)
         hu_moments = self._calculate_hu_moments(mask)
         return Feature(mean_val_hsv, hu_moments)
@@ -23,19 +31,12 @@ class FeatureDetector:
         hu_moments = cv2.HuMoments(cv2.moments(mask)).flatten()
         return hu_moments
 
-    def _get_mask(self, contour, image):
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        mask = np.zeros(gray.shape, np.uint8)
-        cv2.drawContours(mask, [contour], -1, 255, -1)
-        return mask
 
-    def _extract_channel(self, hsv, channel):
-        return np.asarray([[element[channel] for element in row] for row in hsv])
-
+class RangeDetector:
     def get_color_ranges_in_contour(self, contour, image):
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        hue = self._extract_channel(hsv, 0)
-        mask = self._get_mask(contour, image)
+        hue = extract_channel(hsv, 0)
+        mask = get_mask(contour, image)
         hist = cv2.calcHist([hue], [0], mask, [180], [0, 179])
         all_pixels_number = sum(hist)[0]
         self._filter_hist(hist, 0.001, all_pixels_number)
