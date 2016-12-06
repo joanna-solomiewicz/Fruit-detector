@@ -2,41 +2,37 @@ import cv2
 import argparse
 import sqlite3
 import sys
+import random
 from separator.separator import ColorBasedImageSeparator
 from detector.detector import FeatureDetector
 from classifiers.classifier import Classifier
-from repository.repository import FeatureRepository
-from repository.repository import RangeRepository
-import numpy as np
+from repository.repository import FeatureRepository, RangeRepository, FruitRepository
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
 classifier = Classifier()
 
+
 def main():
     args = get_args()
     # image_path = get_image_path(args)
-    image_path = 'img/inne/o4.jpg'
+    image_path = 'img/inne/b2.jpg'
     db_path = get_db_path(args)
-    connection = sqlite3.connect(db_path)
-
-    range_repository = RangeRepository(connection)
-    color_ranges, _ = range_repository.find_all()
-    summary_ranges = get_summary_ranges(color_ranges)
 
     image = cv2.imread(image_path)
-    feature_repository = FeatureRepository(connection)
     if image is None:
         print('Unable to open image.')
         sys.exit()
 
-    contours = separator.color_separate_objects(image, summary_ranges)
-    cv2.drawContours(image, contours, -1, (0, 255, 0), 1)
-    database_features, database_fruit_names = feature_repository.find_all()
-    detected_features = []
-    for contour in contours:
-        detected_features.append(detector.calculate_features(image, contour))
+    connection = sqlite3.connect(db_path)
+    feature_repository = FeatureRepository(connection)
+    fruit_ranges_map = get_fruit_ranges_map(connection)
+
+    contours = get_contours_of_fruits(fruit_ranges_map, image)
     if contours.__len__() > 0:
+        detected_features = get_detected_features(contours, image)
+        #TODO clean
+        database_features, database_fruit_names = feature_repository.find_all()
         classified_contours_numbers, distances = classifier.classify(detected_features, database_features, database_fruit_names)
         classified_contours_names = []
         for i, classified_contours_number in enumerate(classified_contours_numbers):
@@ -45,22 +41,42 @@ def main():
             print(distances[i])
     else:
         print('No fruits found')
-
-    # for fruit_name, color_range in fruit_ranges.items():
-    #     contours = separator.color_separate_objects(image, color_range)
-    #     for contour in contours:
-    #         feature = detector.calculate_features(image, contour)
-    #         if fruit_classifiers.get(fruit_name).is_class(feature):
-    #             print('I found ' + fruit_name)
-    #             cv2.drawContours(image, [contour], -1, (0, 255, 0), 1)
-    #             # draw(contours, fruit_name)
-
+    #TODO delete later
+    cv2.drawContours(image, contours, -1, (0, 255, 0), 1)
     cv2.imshow('result', image)
-
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
     connection.close()
+
+
+def get_detected_features(contours, image):
+    detected_features = []
+    for contour in contours:
+        detected_features.append(detector.calculate_features(image, contour))
+    return detected_features
+
+
+def get_contours_of_fruits(fruit_ranges_map, image):
+    contours = []
+    for fruit_name, fruit_range in fruit_ranges_map.items():
+        objects = separator.color_separate_objects(image, fruit_range)
+        cv2.drawContours(image, objects, -1, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)),
+                         1)
+        contours.extend(objects)
+    return contours
+
+
+def get_fruit_ranges_map(connection):
+    fruit_repository = FruitRepository(connection)
+    range_repository = RangeRepository(connection)
+    fruit_names = fruit_repository.find_all()
+    fruit_ranges_map = {}
+    for fruit_name in fruit_names:
+        color_ranges, _ = range_repository.find_by_fruit_name(fruit_name)
+        summary_ranges = get_summary_ranges(color_ranges)
+        fruit_ranges_map[fruit_name] = summary_ranges
+    return fruit_ranges_map
 
 
 def get_summary_ranges(color_ranges):
@@ -76,7 +92,7 @@ def get_summary_ranges(color_ranges):
         if v is True and in_range is False:
             in_range = True
             start = i
-        elif (v is False or i == size-1) and in_range is True:
+        elif (v is False or i == size - 1) and in_range is True:
             ranges.append((start, i))
             in_range = False
     return ranges
@@ -102,10 +118,6 @@ def get_db_path(args):
     if not db_path:
         return 'fruits.sqlite'
     return db_path
-
-
-def extract_channel(hsv, channel):
-    return np.asarray([[element[channel] for element in row] for row in hsv])
 
 
 if __name__ == '__main__':

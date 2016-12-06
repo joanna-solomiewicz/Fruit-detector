@@ -1,5 +1,4 @@
 from detector.feature import Feature
-import sqlite3
 
 
 class StoreException(Exception):
@@ -89,7 +88,7 @@ class FruitRepository:
             rows = cursor.fetchall()
             result = []
             for row in rows:
-                result.append((row[0], row[1]))
+                result.append(row[0])
             return result
         except Exception:
             raise StoreException('Error while finding all fruits')
@@ -112,6 +111,26 @@ class RangeRepository:
         except Exception:
             raise StoreException('Error while adding range')
 
+    def find_by_fruit_name(self, fruit_name):
+        try:
+            cursor = self._connection.cursor()
+            cursor.execute(
+                'SELECT * FROM ranges '
+                'WHERE fruit = ?',
+                (fruit_name,)
+            )
+            rows = cursor.fetchall()
+            color_ranges = []
+            names = []
+            for row in rows:
+                fruit_name = row[1]
+                color_range = (row[2], row[3])
+                names.append(fruit_name)
+                color_ranges.append(color_range)
+            return color_ranges, names
+        except Exception:
+            raise StoreException('Error while finding ranges for fruit ' + fruit_name)
+
     def find_all(self):
         try:
             cursor = self._connection.cursor()
@@ -126,7 +145,7 @@ class RangeRepository:
                 color_ranges.append(color_range)
             return color_ranges, names
         except Exception:
-            raise StoreException('Error while finding all features')
+            raise StoreException('Error while finding all ranges')
 
 
 class FeatureRepository:
@@ -154,7 +173,6 @@ class FeatureRepository:
             cursor.execute('SELECT * FROM features')
             rows = cursor.fetchall()
 
-            # TODO retun map fruit -> list of features
             features = []
             fruit_names = []
             for row in rows:
