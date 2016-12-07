@@ -12,11 +12,11 @@ class Classifier:
 
         knn_hu = cv2.ml.KNearest_create()
         knn_hu.train(correct_database_features_hu, cv2.ml.ROW_SAMPLE, correct_database_fruit_names)
-        ret_hu, results_hu, neighbours_hu, dist_hu = knn_hu.findNearest(correct_features_hu, 3)
+        ret_hu, results_hu, neighbours_hu, dist_hu = knn_hu.findNearest(correct_features_hu, 5)
 
         knn_color = cv2.ml.KNearest_create()
         knn_color.train(correct_database_features_color, cv2.ml.ROW_SAMPLE, correct_database_fruit_names)
-        ret_color, results_color, neighbours_color, dist_color = knn_color.findNearest(correct_features_color, 2)
+        ret_color, results_color, neighbours_color, dist_color = knn_color.findNearest(correct_features_color, 6)
 
         fruit_names = []
         for i in range(detected_features.__len__()):
