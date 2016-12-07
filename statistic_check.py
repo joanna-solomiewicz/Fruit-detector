@@ -5,7 +5,7 @@ import sys
 from separator.separator import ColorBasedImageSeparator
 from detector.detector import FeatureDetector
 from classifiers.classifier import Classifier
-from repository.repository import FeatureRepository, RangeRepository
+from repository.repository import FeatureRepository
 
 from feed import get_jpg_from_directory
 from recognition import find_fruit_on_image, get_fruit_ranges
@@ -17,25 +17,21 @@ classifier = Classifier()
 
 def main():
     args = get_args()
-    # directory_path = get_directory_path(args)
-    directory_path = 'img/recognition2/'
+    directory_path = get_directory_path(args)
     image_file_names = get_jpg_from_directory(directory_path)
     db_path = get_db_path(args)
 
     connection = sqlite3.connect(db_path)
-    range_repository = RangeRepository(connection)
     feature_repository = FeatureRepository(connection)
-
     fruit_color_ranges = get_fruit_ranges(connection)
 
     good_guesses = 0
-
     singe_element_bad_guesses = 0
     no_objects_detected = 0
     multiple_objects_detected = 0
 
     for image_file_name in image_file_names:
-        print(image_file_name)
+        print("Image:" + image_file_name)
         fruit_on_image = image_file_name.split('.')[0].split('_')[0]
         image = cv2.imread(directory_path + image_file_name)
         if image is None:
@@ -55,11 +51,9 @@ def main():
                 singe_element_bad_guesses += 1
         else:
             detected_fruit_names = [i[0] for i in detected_fruit_name_and_contour]
-            print("  FAIL : Detected too many fruits: " + ', '.join(detected_fruit_names) + ", but it was " + fruit_on_image + ".")
+            print("  FAIL : Detected too many fruits: " + ', '.join(
+                detected_fruit_names) + ", but it was " + fruit_on_image + ".")
             multiple_objects_detected += 1
-
-
-
 
     connection.close()
 
@@ -76,7 +70,7 @@ def main():
 
 def get_args():
     ap = argparse.ArgumentParser()
-    ap.add_argument("-i", "--image", help="path to the image")
+    ap.add_argument("-d", "--directory", help="path to the directory with images of fruits")
     ap.add_argument("-db", "--data_base", help="path to sqlite database file")
     return vars(ap.parse_args())
 

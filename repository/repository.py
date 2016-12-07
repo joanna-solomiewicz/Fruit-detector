@@ -16,6 +16,7 @@ def init_database(connection):
             'name VARCHAR(255) PRIMARY KEY'
             ' )'
         )
+        print("Created table: fruits")
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS features'
             '('
@@ -24,6 +25,9 @@ def init_database(connection):
             'mean_color_h INTEGER NOT NULL,'
             'mean_color_s INTEGER NOT NULL,'
             'mean_color_v INTEGER NOT NULL,'
+            'standard_deviation_h INTEGER NOT NULL,'
+            'standard_deviation_s INTEGER NOT NULL,'
+            'standard_deviation_v INTEGER NOT NULL,'
             'hu_1 DOUBLE NOT NULL,'
             'hu_2 DOUBLE NOT NULL,'
             'hu_3 DOUBLE NOT NULL,'
@@ -33,6 +37,7 @@ def init_database(connection):
             'hu_7 DOUBLE NOT NULL'
             ')'
         )
+        print("Created table: features")
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS ranges'
             '('
@@ -42,6 +47,7 @@ def init_database(connection):
             'max_hue INTEGER NOT NULL'
             ')'
         )
+        print("Created table: ranges")
 
         connection.commit()
     except Exception:
@@ -157,9 +163,12 @@ class FeatureRepository:
             cursor = self._connection.cursor()
             cursor.execute(
                 'INSERT INTO features '
-                '(fruit, mean_color_h, mean_color_s, mean_color_v, hu_1, hu_2, hu_3, hu_4, hu_5, hu_6, hu_7) '
-                'VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+                '(fruit, mean_color_h, mean_color_s, mean_color_v, '
+                'standard_deviation_h, standard_deviation_s, standard_deviation_v,'
+                'hu_1, hu_2, hu_3, hu_4, hu_5, hu_6, hu_7) '
+                'VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
                 (fruit_name, int(feature.mean_color[0]), int(feature.mean_color[1]), int(feature.mean_color[2]),
+                 int(feature.standard_deviation[0]), int(feature.standard_deviation[1]), int(feature.standard_deviation[2]),
                  feature.hu_moments[0], feature.hu_moments[1], feature.hu_moments[2],
                  feature.hu_moments[3], feature.hu_moments[4], feature.hu_moments[5], feature.hu_moments[6])
             )
@@ -177,8 +186,9 @@ class FeatureRepository:
             fruit_names = []
             for row in rows:
                 mean_hsv = (row[2], row[3], row[4])
-                hu_moments = row[5:12]
-                features.append(Feature(mean_hsv, hu_moments))
+                standard_deviation_hsv = (row[5], row[6], row[7])
+                hu_moments = row[8:15]
+                features.append(Feature(mean_hsv, standard_deviation_hsv, hu_moments))
                 fruit_names.append(row[1])
 
             return features, fruit_names

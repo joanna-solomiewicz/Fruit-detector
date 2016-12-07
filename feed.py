@@ -24,8 +24,9 @@ def main():
     feature_repository = FeatureRepository(connection)
     range_repository = RangeRepository(connection)
 
-    for file_name in image_file_names:
-        image = cv2.imread(directory_path + "/" + file_name)
+    for i, file_name in enumerate(image_file_names):
+        print(str(i/image_file_names.__len__()*100) + "%")
+        image = cv2.imread(directory_path + file_name)
         if image is None:
             continue
         fruit_name = file_name.split('.')[0]
@@ -39,12 +40,9 @@ def main():
         color_ranges = range_detector.get_color_ranges_in_contour(contour, image)
         for color_range in color_ranges:
             range_repository.add(color_range, fruit_name)
-
-    #TODO delete later
-    #     cv2.imshow(file_name, detector._get_mask(contour, image))
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
     connection.close()
+    print("100%")
+    print("FINISHED")
 
 
 def get_args():

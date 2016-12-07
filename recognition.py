@@ -3,10 +3,11 @@ import argparse
 import sqlite3
 import sys
 import random
+import os
 from separator.separator import ColorBasedImageSeparator
 from detector.detector import FeatureDetector
 from classifiers.classifier import Classifier
-from repository.repository import FeatureRepository, RangeRepository, FruitRepository
+from repository.repository import FeatureRepository, RangeRepository
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
@@ -15,27 +16,32 @@ classifier = Classifier()
 
 def main():
     args = get_args()
-    # image_path = get_image_path(args)
-    image_path = 'img/recognition/jabłko_zielone_jasne.14.jpg'
+    directory_path = get_directory_path(args)
+    if directory_path is None:
+        image_path = get_image_path(args)
+        image_paths = [image_path]
+    else:
+        image_paths = [directory_path + file_name for file_name in get_jpg_from_directory(directory_path)]
+
     db_path = get_db_path(args)
 
-    image = cv2.imread(image_path)
-    if image is None:
-        print('Unable to open image.')
-        sys.exit()
+    for image_path in image_paths:
+        image = cv2.imread(image_path)
+        if image is None:
+            print('Unable to open image.')
+            sys.exit()
 
-    connection = sqlite3.connect(db_path)
-    feature_repository = FeatureRepository(connection)
-    fruit_color_ranges = get_fruit_ranges(connection)
+        connection = sqlite3.connect(db_path)
+        feature_repository = FeatureRepository(connection)
+        fruit_color_ranges = get_fruit_ranges(connection)
 
-    detected_fruits = find_fruit_on_image(image, fruit_color_ranges, feature_repository)
-    for fruit_name, contour in detected_fruits:
-        print_name_in_center(contour, fruit_name, image)
-    #
-    # cv2.imshow('result', image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+        detected_fruits = find_fruit_on_image(image, fruit_color_ranges, feature_repository)
+        for fruit_name, contour in detected_fruits:
+            print_name_in_center(contour, fruit_name, image)
 
+        cv2.imshow('Result', image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
     connection.close()
 
 
@@ -46,13 +52,11 @@ def find_fruit_on_image(image, fruit_color_ranges, feature_repository):
     detected_features = get_detected_features(detected_contours, image)
     database_features, database_fruit_names = feature_repository.find_all()
     classified_fruit_names = classifier.classify(detected_features, database_features, database_fruit_names)
-
     # for i, cont in enumerate(detected_contours):
     #     print_name_in_center(cont, classified_fruit_names[i], image)
     # cv2.imshow('res', image)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
-
     return list(zip(classified_fruit_names, detected_contours))
 
 
@@ -119,9 +123,18 @@ def get_summary_ranges(color_ranges):
     return ranges
 
 
+def get_jpg_from_directory(directory_path):
+    jpgFiles = []
+    for file in os.listdir(directory_path):
+        if file.endswith(".jpg") or file.endswith(".JPG"):
+            jpgFiles.append(file)
+    return jpgFiles
+
+
 def get_args():
     ap = argparse.ArgumentParser()
     ap.add_argument("-i", "--image", help="path to the image")
+    ap.add_argument("-d", "--directory", help="path to the directory with images of fruits")
     ap.add_argument("-db", "--data_base", help="path to sqlite database file")
     return vars(ap.parse_args())
 
@@ -139,6 +152,13 @@ def get_db_path(args):
     if not db_path:
         return 'fruits.sqlite'
     return db_path
+
+
+def get_directory_path(args):
+    directoryPath = args.get("directory", False)
+    if not directoryPath:
+        return None
+    return directoryPath
 
 
 if __name__ == '__main__':
