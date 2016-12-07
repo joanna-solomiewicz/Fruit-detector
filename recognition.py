@@ -31,10 +31,10 @@ def main():
     detected_fruits = find_fruit_on_image(image, fruit_color_ranges, feature_repository)
     for fruit_name, contour in detected_fruits:
         print_name_in_center(contour, fruit_name, image)
-
-    cv2.imshow('result', image)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    #
+    # cv2.imshow('result', image)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     connection.close()
 

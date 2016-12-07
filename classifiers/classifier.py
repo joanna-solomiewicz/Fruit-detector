@@ -16,7 +16,7 @@ class Classifier:
 
         knn_color = cv2.ml.KNearest_create()
         knn_color.train(correct_database_features_color, cv2.ml.ROW_SAMPLE, correct_database_fruit_names)
-        ret_color, results_color, neighbours_color, dist_color = knn_color.findNearest(correct_features_color, 6)
+        ret_color, results_color, neighbours_color, dist_color = knn_color.findNearest(correct_features_color, 5)
 
         fruit_names = []
         for i in range(detected_features.__len__()):
@@ -36,8 +36,12 @@ class Classifier:
     def convert_feature_to_list(self, feature):
         correct_features_color = []
         correct_features_hu = []
-        for i in range(3):
-            correct_features_color.append(feature.mean_color[i])
+
+        for i in range(15):
+            correct_features_color.append(feature.mean_color[0])
+        correct_features_color.append(feature.mean_color[1])
+        correct_features_color.append(feature.mean_color[2])
+
         for i in range(7):
             correct_features_hu.append(feature.hu_moments[i])
 

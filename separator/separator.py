@@ -13,7 +13,7 @@ class ColorBasedImageSeparator:
         assert isinstance(hue_ranges, list)
         blurred = cv2.GaussianBlur(image, (5, 5), 0)
         hsv = cv2.cvtColor(blurred, cv2.COLOR_BGR2HSV)
-        color_ranges = self._generate_color_ranges(hue_ranges, 100, 100)
+        color_ranges = self._generate_color_ranges(hue_ranges, 111, 111)
         summary_mask = self._get_mask_from_ranges(hsv, color_ranges)
         summary_mask = cv2.morphologyEx(summary_mask, cv2.MORPH_OPEN, None, iterations=2)
         _, contours, hierarchy = cv2.findContours(summary_mask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
