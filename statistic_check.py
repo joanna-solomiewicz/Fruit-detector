@@ -18,7 +18,7 @@ classifier = Classifier()
 def main():
     args = get_args()
     # directory_path = get_directory_path(args)
-    directory_path = 'img/recognition/'
+    directory_path = 'img/recognition2/'
     image_file_names = get_jpg_from_directory(directory_path)
     db_path = get_db_path(args)
 
@@ -60,11 +60,6 @@ def main():
 
 
 
-            # TODO delete_later
-            # cv2.drawContours(image, contours, -1, (0, 255, 0), 1)
-            # cv2.imshow('result', image)
-            # cv2.waitKey(0)
-            # cv2.destroyAllWindows()
 
     connection.close()
 
