@@ -16,7 +16,7 @@ classifier = Classifier()
 def main():
     args = get_args()
     # image_path = get_image_path(args)
-    image_path = 'img/inne/zj5.jpg'
+    image_path = 'img/recognition/jabłko_zielone_jasne.14.jpg'
     db_path = get_db_path(args)
 
     image = cv2.imread(image_path)
@@ -26,26 +26,36 @@ def main():
 
     connection = sqlite3.connect(db_path)
     feature_repository = FeatureRepository(connection)
-    fruit_ranges_map = get_fruit_ranges_map(connection)
+    fruit_color_ranges = get_fruit_ranges(connection)
 
-    contours = get_contours_of_fruits(fruit_ranges_map, image)
-    if contours.__len__() > 0:
-        detected_features = get_detected_features(contours, image)
-        #TODO clean
-        database_features, database_fruit_names = feature_repository.find_all()
-        classified_contours = classifier.classify(detected_features, database_features, database_fruit_names)
-        for i, classified_contour in enumerate(classified_contours):
-            print('Found: ' + classified_contour)
-            print_name_in_center(contours[i], classified_contour, image)
-    else:
-        print('No fruits found')
-    #TODO delete later
-    cv2.drawContours(image, contours, -1, (0, 255, 0), 1)
+    detected_fruits = find_fruit_on_image(image, fruit_color_ranges, feature_repository)
+    for fruit_name, contour in detected_fruits:
+        print_name_in_center(contour, fruit_name, image)
+
     cv2.imshow('result', image)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
     connection.close()
+
+
+def find_fruit_on_image(image, fruit_color_ranges, feature_repository):
+    detected_contours = separator.color_separate_objects(image, fruit_color_ranges)
+    if detected_contours.__len__() == 0:
+        return []
+    detected_features = get_detected_features(detected_contours, image)
+    database_features, database_fruit_names = feature_repository.find_all()
+    classified_fruit_names = classifier.classify(detected_features, database_features, database_fruit_names)
+    return list(zip(classified_fruit_names, detected_contours))
+
+
+def get_fruits_matching_color_range(classified_fruit_names, detected_contours, detected_fruit_names):
+    correctly_classified = []
+    for i, fruit_name in enumerate(classified_fruit_names):
+        detected_fruit = detected_fruit_names[i].split('_')[0]
+        if fruit_name == detected_fruit:
+            correctly_classified.append((fruit_name, detected_contours[i]))
+    return correctly_classified
 
 
 def print_name_in_center(contour, name, image):
@@ -55,7 +65,11 @@ def print_name_in_center(contour, name, image):
     fontThickness = 1
     fontSize = cv2.getTextSize(name, fontFace, fontScale, fontThickness)[0]
     fontOrg = (int(centre[0] - fontSize[0] / 2), int(centre[1] - fontSize[1] / 2))
-    cv2.putText(image, name, fontOrg, fontFace, fontScale, (0, 0, 111), fontThickness)
+
+    color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
+    cv2.putText(image, name, fontOrg, fontFace, fontScale, color, fontThickness)
+    cv2.drawContours(image, [contour], -1, color, 1)
 
 
 def get_centre(contour):
@@ -72,25 +86,11 @@ def get_detected_features(contours, image):
     return detected_features
 
 
-def get_contours_of_fruits(fruit_ranges_map, image):
-    contours = []
-    for fruit_name, fruit_range in fruit_ranges_map.items():
-        objects = separator.color_separate_objects(image, fruit_range)
-        cv2.drawContours(image, objects, -1, (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)), 1)
-        contours.extend(objects)
-    return contours
-
-
-def get_fruit_ranges_map(connection):
-    fruit_repository = FruitRepository(connection)
+def get_fruit_ranges(connection):
     range_repository = RangeRepository(connection)
-    fruit_names = fruit_repository.find_all()
-    fruit_ranges_map = {}
-    for fruit_name in fruit_names:
-        color_ranges, _ = range_repository.find_by_fruit_name(fruit_name)
-        summary_ranges = get_summary_ranges(color_ranges)
-        fruit_ranges_map[fruit_name] = summary_ranges
-    return fruit_ranges_map
+    color_ranges = range_repository.find_all()[0]
+    summary_ranges = get_summary_ranges(color_ranges)
+    return summary_ranges
 
 
 def get_summary_ranges(color_ranges):

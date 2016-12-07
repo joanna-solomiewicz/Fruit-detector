@@ -8,7 +8,7 @@ from classifiers.classifier import Classifier
 from repository.repository import FeatureRepository, RangeRepository
 
 from feed import get_jpg_from_directory
-from recognition import get_fruit_ranges_map, get_contours_of_fruits, get_detected_features
+from recognition import find_fruit_on_image, get_fruit_ranges
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
@@ -26,38 +26,39 @@ def main():
     range_repository = RangeRepository(connection)
     feature_repository = FeatureRepository(connection)
 
-    fruit_ranges_map = get_fruit_ranges_map(connection)
+    fruit_color_ranges = get_fruit_ranges(connection)
 
-    no_contours_found = 0
     good_guesses = 0
-    bad_guesses = 0
+
+    singe_element_bad_guesses = 0
+    no_objects_detected = 0
+    multiple_objects_detected = 0
 
     for image_file_name in image_file_names:
-        fruit = image_file_name.split('.')[0].split('_')[0]
+        print(image_file_name)
+        fruit_on_image = image_file_name.split('.')[0].split('_')[0]
         image = cv2.imread(directory_path + image_file_name)
         if image is None:
+            print("  WARN : Unable to open file.")
             continue
-        contours = get_contours_of_fruits(fruit_ranges_map, image)
-        if contours.__len__() > 0:
-            detected_features = get_detected_features(contours, image)
-
-            # TODO clean
-            database_features, database_fruit_names = feature_repository.find_all()
-
-            classified_contours = classifier.classify(detected_features, database_features,
-                                                      database_fruit_names)
-            for classified_contour in classified_contours:
-                print('Found: ' + classified_contour)
-                if classified_contour != fruit:
-                    print('Wrong, it was ' + fruit)
-                    bad_guesses += 1
-                else:
-                    print('Good')
-                    good_guesses += 1
-                print('')
+        detected_fruit_name_and_contour = find_fruit_on_image(image, fruit_color_ranges, feature_repository)
+        if detected_fruit_name_and_contour.__len__() == 0:
+            print("  FAIL : Didn't detect any fruit.")
+            no_objects_detected += 1
+        elif detected_fruit_name_and_contour.__len__() == 1:
+            detected_fruit = detected_fruit_name_and_contour[0][0].split('_')[0]
+            if detected_fruit == fruit_on_image:
+                print("  SUCCESS : Detected " + detected_fruit + ".")
+                good_guesses += 1
+            else:
+                print("  FAIL : Detected " + detected_fruit + ", but it was " + fruit_on_image + ".")
+                singe_element_bad_guesses += 1
         else:
-            print('No fruits found')
-            no_contours_found += 1
+            detected_fruit_names = [i[0] for i in detected_fruit_name_and_contour]
+            print("  FAIL : Detected too many fruits: " + ', '.join(detected_fruit_names) + ", but it was " + fruit_on_image + ".")
+            multiple_objects_detected += 1
+
+
 
             # TODO delete_later
             # cv2.drawContours(image, contours, -1, (0, 255, 0), 1)
@@ -67,9 +68,15 @@ def main():
 
     connection.close()
 
-    accuracy = 100 * good_guesses / (good_guesses + bad_guesses)
+    bad_guesses = singe_element_bad_guesses + no_objects_detected + multiple_objects_detected;
+    guesses = (good_guesses + bad_guesses)
+    accuracy = 100 * good_guesses / guesses
     print('Percent of good guesses: {}'.format(accuracy))
-    print('Could not find contours in {} images out of {}.'.format(no_contours_found, image_file_names.__len__()))
+    print('Percent of bad guesses: {}'.format(100 - accuracy))
+    print()
+    print('Percent of no objects detected: {}'.format(100 * no_objects_detected / guesses))
+    print('Percent of multiple objects detected: {}'.format(100 * multiple_objects_detected / guesses))
+    print('Percent of bad guesses when single element was found: {}'.format(100 * singe_element_bad_guesses / guesses))
 
 
 def get_args():
