@@ -24,7 +24,7 @@ class FeatureDetector:
         mean_val_hsv = cv2.cvtColor(np.uint8([[mean_val]]), cv2.COLOR_BGR2HSV)[0][0]
         standard_deviation = np.uint8([x[0] for x in mean_and_stdDev[1]])  # in BGR
         standard_deviation_hsv = cv2.cvtColor(np.uint8([[standard_deviation]]), cv2.COLOR_BGR2HSV)[0][0]
-        return mean_val_hsv, standard_deviation
+        return mean_val_hsv, standard_deviation_hsv
 
     def _calculate_hu_moments(self, mask):
         hu_moments = cv2.HuMoments(cv2.moments(mask)).flatten()
