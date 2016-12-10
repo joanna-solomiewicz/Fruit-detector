@@ -2,7 +2,6 @@ import cv2
 import argparse
 import sqlite3
 import sys
-import random
 import os
 from separator.separator import ColorBasedImageSeparator
 from detector.detector import FeatureDetector
@@ -25,16 +24,16 @@ def main():
 
     db_path = get_db_path(args)
 
+    connection = sqlite3.connect(db_path)
+    feature_repository = FeatureRepository(connection)
+    fruit_color_ranges = get_fruit_ranges(connection)
+
+
     for image_path in image_paths:
         image = cv2.imread(image_path)
         if image is None:
             print('Unable to open image.')
             sys.exit()
-
-        connection = sqlite3.connect(db_path)
-        feature_repository = FeatureRepository(connection)
-        fruit_color_ranges = get_fruit_ranges(connection)
-
         detected_fruits = find_fruit_on_image(image, fruit_color_ranges, feature_repository)
         for fruit_name, contour in detected_fruits:
             print_name_in_center(contour, fruit_name, image)
@@ -76,11 +75,8 @@ def print_name_in_center(contour, name, image):
     fontThickness = 1
     fontSize = cv2.getTextSize(name, fontFace, fontScale, fontThickness)[0]
     fontOrg = (int(centre[0] - fontSize[0] / 2), int(centre[1] - fontSize[1] / 2))
-
-    color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-
+    color = (0, 0, 0)
     cv2.putText(image, name, fontOrg, fontFace, fontScale, color, fontThickness)
-    cv2.drawContours(image, [contour], -1, color, 1)
 
 
 def get_centre(contour):

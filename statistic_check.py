@@ -5,7 +5,8 @@ import sys
 from separator.separator import ColorBasedImageSeparator
 from detector.detector import FeatureDetector
 from classifiers.classifier import Classifier
-from repository.repository import FeatureRepository
+from repository.repository import FeatureRepository, FruitRepository
+from sklearn.metrics import confusion_matrix
 
 from feed import get_jpg_from_directory
 from recognition import find_fruit_on_image, get_fruit_ranges
@@ -25,10 +26,23 @@ def main():
     feature_repository = FeatureRepository(connection)
     fruit_color_ranges = get_fruit_ranges(connection)
 
+    fruit_repository = FruitRepository(connection)
+    fruit_names = fruit_repository.find_all()
+
+    string_to_number_dictionary = {}
+    number_to_string_dictionary = {}
+    for i, fruit_name in enumerate(set(fruit_names)):
+        fruit_name = fruit_name.split('_')[0]
+        string_to_number_dictionary[fruit_name] = i
+        number_to_string_dictionary[i] = fruit_name
+
     good_guesses = 0
     singe_element_bad_guesses = 0
     no_objects_detected = 0
     multiple_objects_detected = 0
+
+    predicted = []
+    detected = []
 
     for image_file_name in image_file_names:
         print("Image:" + image_file_name)
@@ -43,6 +57,10 @@ def main():
             no_objects_detected += 1
         elif detected_fruit_name_and_contour.__len__() == 1:
             detected_fruit = detected_fruit_name_and_contour[0][0].split('_')[0]
+
+            predicted.append(string_to_number_dictionary[fruit_on_image])
+            detected.append(string_to_number_dictionary[detected_fruit])
+
             if detected_fruit == fruit_on_image:
                 print("  SUCCESS : Detected " + detected_fruit + ".")
                 good_guesses += 1
@@ -60,12 +78,16 @@ def main():
     bad_guesses = singe_element_bad_guesses + no_objects_detected + multiple_objects_detected;
     guesses = (good_guesses + bad_guesses)
     accuracy = 100 * good_guesses / guesses
-    print('Percent of good guesses: {}'.format(accuracy))
-    print('Percent of bad guesses: {}'.format(100 - accuracy))
-    print()
     print('Percent of no objects detected: {}'.format(100 * no_objects_detected / guesses))
     print('Percent of multiple objects detected: {}'.format(100 * multiple_objects_detected / guesses))
+    print()
     print('Percent of bad guesses when single element was found: {}'.format(100 * singe_element_bad_guesses / guesses))
+    print('Percent of good guesses: {}'.format(accuracy))
+    print('Percent of bad guesses: {}'.format(100 - accuracy))
+
+    matrix = confusion_matrix(detected, predicted)
+    print('\nConfusion matrix: ')
+    print(matrix)
 
 
 def get_args():
