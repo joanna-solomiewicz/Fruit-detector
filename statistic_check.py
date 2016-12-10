@@ -12,19 +12,21 @@ from recognition import find_fruit_on_image, get_fruit_ranges
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
-classifier = Classifier()
 
 
 def main():
     args = get_args()
     # directory_path = get_directory_path(args)
-    directory_path = 'img/recognition2/'
+    directory_path = 'img/recognition/'
     image_file_names = get_jpg_from_directory(directory_path)
     db_path = get_db_path(args)
 
     connection = sqlite3.connect(db_path)
     range_repository = RangeRepository(connection)
     feature_repository = FeatureRepository(connection)
+
+    database_features, database_fruit_names = feature_repository.find_all()
+    classifier = Classifier(database_features, database_fruit_names)
 
     fruit_color_ranges = get_fruit_ranges(connection)
 
@@ -41,7 +43,7 @@ def main():
         if image is None:
             print("  WARN : Unable to open file.")
             continue
-        detected_fruit_name_and_contour = find_fruit_on_image(image, fruit_color_ranges, feature_repository)
+        detected_fruit_name_and_contour = find_fruit_on_image(image, fruit_color_ranges, feature_repository, classifier)
         if detected_fruit_name_and_contour.__len__() == 0:
             print("  FAIL : Didn't detect any fruit.")
             no_objects_detected += 1

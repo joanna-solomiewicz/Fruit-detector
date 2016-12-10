@@ -10,13 +10,12 @@ from repository.repository import FeatureRepository, RangeRepository, FruitRepos
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
-classifier = Classifier()
 
 
 def main():
     args = get_args()
     # image_path = get_image_path(args)
-    image_path = 'img/recognition/jabłko_zielone_jasne.14.jpg'
+    image_path = 'img/recognition/Apple_green_dark.4.jpg'
     db_path = get_db_path(args)
 
     image = cv2.imread(image_path)
@@ -28,7 +27,9 @@ def main():
     feature_repository = FeatureRepository(connection)
     fruit_color_ranges = get_fruit_ranges(connection)
 
-    detected_fruits = find_fruit_on_image(image, fruit_color_ranges, feature_repository)
+    database_features, database_fruit_names = feature_repository.find_all()
+    classifier = Classifier(database_features, database_fruit_names)
+    detected_fruits = find_fruit_on_image(image, fruit_color_ranges, feature_repository, classifier)
     for fruit_name, contour in detected_fruits:
         print_name_in_center(contour, fruit_name, image)
     #
@@ -39,13 +40,12 @@ def main():
     connection.close()
 
 
-def find_fruit_on_image(image, fruit_color_ranges, feature_repository):
+def find_fruit_on_image(image, fruit_color_ranges, feature_repository, classifier):
     detected_contours = separator.color_separate_objects(image, fruit_color_ranges)
     if detected_contours.__len__() == 0:
         return []
     detected_features = get_detected_features(detected_contours, image)
-    database_features, database_fruit_names = feature_repository.find_all()
-    classified_fruit_names = classifier.classify(detected_features, database_features, database_fruit_names)
+    classified_fruit_names = classifier.classify(detected_features)
 
     # for i, cont in enumerate(detected_contours):
     #     print_name_in_center(cont, classified_fruit_names[i], image)

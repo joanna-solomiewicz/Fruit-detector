@@ -1,77 +1,74 @@
-import cv2
+from sklearn import tree
 import numpy as np
 
 
 class Classifier:
     string_to_number_dictionary = {}
     number_to_string_dictionary = {}
+    database_fruit_ids = []
+    correct_database_features = []
+    correct_detected_features = []
+    classifier = None
 
-    def classify(self, detected_features, database_features, database_fruit_names):
-        correct_database_features_color, correct_database_features_hu, correct_database_fruit_names = self.convert_features_from_database(database_features, database_fruit_names)
-        correct_features_color, correct_features_hu = self.convert_features_from_detector(detected_features)
+    def __init__(self, database_features, database_fruit_names):
+        self.make_dictionaries(database_fruit_names)
+        self.convert_database(database_features, database_fruit_names)
+        self.learn()
 
-        knn_hu = cv2.ml.KNearest_create()
-        knn_hu.train(correct_database_features_hu, cv2.ml.ROW_SAMPLE, correct_database_fruit_names)
-        ret_hu, results_hu, neighbours_hu, dist_hu = knn_hu.findNearest(correct_features_hu, 5)
+    def classify(self, detected_features):
+        classified_fruits = self.predict(detected_features)
 
-        knn_color = cv2.ml.KNearest_create()
-        knn_color.train(correct_database_features_color, cv2.ml.ROW_SAMPLE, correct_database_fruit_names)
-        ret_color, results_color, neighbours_color, dist_color = knn_color.findNearest(correct_features_color, 5)
+        return classified_fruits
 
-        fruit_names = []
-        for i in range(detected_features.__len__()):
-            neighbours = []
-            for neighbour_hu in neighbours_hu[i]:
-                neighbours.append(neighbour_hu)
-            for neighbour_color in neighbours_color[i]:
-                neighbours.append(neighbour_color)
-            fruit_name = self.number_to_string_dictionary[self.most_common(neighbours)].split('_')[0]
-            fruit_names.append(fruit_name)
+    def learn(self):
+        self.classifier = tree.DecisionTreeClassifier()
+        self.classifier.fit(self.correct_database_features, self.database_fruit_ids)
 
-        return fruit_names
+    def predict(self, detected_features):
+        self.convert_detected_features(detected_features)
+        classified_fruits = []
+        for correct_detected_feature in self.correct_detected_features:
+            prediction = self.classifier.predict(np.reshape(correct_detected_feature, (1, -1)))
+            classified_fruits.append(self.number_to_string_dictionary[prediction[0]])
+
+        return classified_fruits
 
     def most_common(self, lst):
         return max(set(lst), key=lst.count)
-
-    def convert_feature_to_list(self, feature):
-        correct_features_color = []
-        correct_features_hu = []
-
-        for i in range(15):
-            correct_features_color.append(feature.mean_color[0])
-        correct_features_color.append(feature.mean_color[1])
-        correct_features_color.append(feature.mean_color[2])
-
-        for i in range(7):
-            correct_features_hu.append(feature.hu_moments[i])
-
-        return np.asarray(correct_features_color, dtype=np.float32), np.asarray(correct_features_hu, dtype=np.float32)
-
-    def convert_features_from_detector(self, detected_features):
-        correct_detected_features_color = []
-        correct_detected_features_hu = []
-        for detected_feature in detected_features:
-            color, hu = self.convert_feature_to_list(detected_feature)
-            correct_detected_features_color.append(color)
-            correct_detected_features_hu.append(hu)
-        return np.asarray(correct_detected_features_color, dtype=np.float32), np.asarray(correct_detected_features_hu, dtype=np.float32)
-
-    def convert_features_from_database(self, database_features, database_fruit_names):
-        correct_database_features_color = []
-        correct_database_features_hu = []
-        for database_feature in database_features:
-            color, hu = self.convert_feature_to_list(database_feature)
-            correct_database_features_color.append(color)
-            correct_database_features_hu.append(hu)
-
-        correct_database_fruit_names = []
-        self.make_dictionaries(database_fruit_names)
-        for database_fruit_name in database_fruit_names:
-            correct_database_fruit_names.append(self.string_to_number_dictionary[database_fruit_name])
-
-        return np.asarray(correct_database_features_color, dtype=np.float32), np.asarray(correct_database_features_hu, dtype=np.float32), np.asarray(correct_database_fruit_names, dtype=np.float32)
 
     def make_dictionaries(self, strings):
         for i, string in enumerate(set(strings)):
             self.string_to_number_dictionary[string] = i
             self.number_to_string_dictionary[i] = string
+
+    def string_to_id(self, strings):
+        ids = []
+        for string in strings:
+            ids.append(self.string_to_number_dictionary[string])
+        return ids
+
+    def id_to_string(self, ids):
+        strings = []
+        for id in ids:
+            strings.append(self.number_to_string_dictionary[id])
+        return strings
+
+    def convert_feature_to_list(self, feature):
+        list = []
+        for i in range(3):
+            list.append(feature.mean_color[i])
+        for i in range(7):
+            list.append(feature.hu_moments[i])
+        return list
+
+    def convert_detected_features(self, detected_features):
+        self.correct_detected_features = []
+        for detected_feature in detected_features:
+            self.correct_detected_features.append(self.convert_feature_to_list(detected_feature))
+
+    def convert_database(self, database_features, database_fruit_names):
+        self.database_fruit_ids = self.string_to_id(database_fruit_names)
+
+        for database_feature in database_features:
+            self.correct_database_features.append(self.convert_feature_to_list(database_feature))
+
