@@ -12,7 +12,7 @@ def init_database(connection):
         cursor = connection.cursor()
         table_name = 'fruits'
         cursor.execute(
-            'DROP TABLE ' + table_name
+            'DROP TABLE IF EXISTS ' + table_name
         )
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS ' + table_name +
@@ -24,7 +24,7 @@ def init_database(connection):
 
         table_name = 'features'
         cursor.execute(
-            'DROP TABLE ' + table_name
+            'DROP TABLE IF EXISTS ' + table_name
         )
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS ' + table_name +
@@ -49,7 +49,7 @@ def init_database(connection):
         print("Created table: " + table_name)
         table_name = 'ranges'
         cursor.execute(
-            'DROP TABLE ' + table_name
+            'DROP TABLE IF EXISTS ' + table_name
         )
         cursor.execute(
             'CREATE TABLE IF NOT EXISTS ' + table_name +
