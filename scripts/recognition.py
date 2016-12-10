@@ -3,12 +3,13 @@ import sqlite3
 import sys
 import cv2
 
+from fruit_detector.core import find_fruit_on_image
 from fruit_detector.features import FeatureDetector
 from fruit_detector.color_ranges import get_fruit_ranges
 from fruit_detector.repositories import FeatureRepository
 from fruit_detector.classifiers import Classifier
 from fruit_detector.separators import ColorBasedImageSeparator
-from fruit_detector.utils import get_jpg_from_directory, find_fruit_on_image, print_name_in_center
+from fruit_detector.utils import get_jpg_from_directory, print_name_in_center
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()

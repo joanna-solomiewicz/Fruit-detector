@@ -43,7 +43,7 @@ class Classifier:
             correct_features_color.append(feature.mean_color[0])  # Mean Hue
         correct_features_color.append(feature.mean_color[1])  # Mean saturation
         # correct_features_color.append(feature.mean_color[2]) # Mean Value - deleted to make better results
-        correct_features_color.append(feature.standard_deviation[0])  # StdDev Heu
+        correct_features_color.append(feature.standard_deviation[0])  # StdDev Hue
         correct_features_color.append(feature.standard_deviation[1])  # StdDev Saturation
         correct_features_color.append(feature.standard_deviation[2])  # StdDev Value
 
