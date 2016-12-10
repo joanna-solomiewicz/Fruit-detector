@@ -1,11 +1,12 @@
-import cv2
 import argparse
-import os
-import sys
-from separator.separator import BinaryImageSeparator
-from detector.detector import FeatureDetector, RangeDetector
-from repository.repository import FruitRepository, FeatureRepository, RangeRepository, init_database
 import sqlite3
+import sys
+import cv2
+
+from fruit_detector.features import FeatureDetector, RangeDetector
+from fruit_detector.repositories import FruitRepository, FeatureRepository, RangeRepository, init_database
+from fruit_detector.separators import BinaryImageSeparator
+from fruit_detector.utils import get_jpg_from_directory, get_base_fruit_name
 
 separator = BinaryImageSeparator()
 feature_detector = FeatureDetector()
@@ -24,12 +25,16 @@ def main():
     feature_repository = FeatureRepository(connection)
     range_repository = RangeRepository(connection)
 
-    for i, file_name in enumerate(image_file_names):
-        print(str(i/image_file_names.__len__()*100) + "%")
-        image = cv2.imread(directory_path + file_name)
+    added = 0
+
+    for i, image_file_name in enumerate(image_file_names):
+        print(str(i / image_file_names.__len__() * 100) + "%")
+
+        image = cv2.imread(directory_path + image_file_name)
         if image is None:
             continue
-        fruit_name = file_name.split('.')[0]
+        fruit_name = get_base_fruit_name(image_file_name)
+
         fruit_repository.add_if_not_exist(fruit_name)
 
         contour = separator.separate(image)
@@ -40,9 +45,13 @@ def main():
         color_ranges = range_detector.get_color_ranges_in_contour(contour, image)
         for color_range in color_ranges:
             range_repository.add(color_range, fruit_name)
+
+        added += 1
     connection.close()
+
     print("100%")
-    print("FINISHED")
+    print("FINISHED\n")
+    print('Added ' + str(added) + ' fruits to database.')
 
 
 def get_args():
@@ -65,14 +74,6 @@ def get_db_path(args):
     if not db_path:
         return 'fruits.sqlite'
     return db_path
-
-
-def get_jpg_from_directory(directory_path):
-    jpgFiles = []
-    for file in os.listdir(directory_path):
-        if file.endswith(".jpg") or file.endswith(".JPG"):
-            jpgFiles.append(file)
-    return jpgFiles
 
 
 if __name__ == '__main__':

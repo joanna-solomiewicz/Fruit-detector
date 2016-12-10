@@ -1,38 +1,6 @@
 import cv2
-import numpy as np
-import math
-from detector.feature import Feature
-
-
-def extract_channel(hsv, channel):
-    return np.asarray([[element[channel] for element in row] for row in hsv])
-
-
-def get_mask(contour, image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    mask = np.zeros(gray.shape, np.uint8)
-    cv2.drawContours(mask, [contour], -1, 255, -1)
-    return mask
-
-
-class FeatureDetector:
-    def calculate_features(self, image, contour):
-        mask = get_mask(contour, image)
-        mean_val_hsv, standard_deviation_hsv = self._calculate_mean_and_standard_deviation(image, mask)
-        hu_moments = self._calculate_hu_moments(mask)
-        return Feature(mean_val_hsv, standard_deviation_hsv, hu_moments)
-
-    def _calculate_mean_and_standard_deviation(self, image, mask):
-        mean_and_stdDev = cv2.meanStdDev(image, mask=mask)[:3]
-        mean_val = np.uint8([x[0] for x in mean_and_stdDev[0]])  # in BGR
-        mean_val_hsv = cv2.cvtColor(np.uint8([[mean_val]]), cv2.COLOR_BGR2HSV)[0][0]
-        standard_deviation = np.uint8([x[0] for x in mean_and_stdDev[1]])  # in BGR
-        standard_deviation_hsv = cv2.cvtColor(np.uint8([[standard_deviation]]), cv2.COLOR_BGR2HSV)[0][0]
-        return mean_val_hsv, standard_deviation
-
-    def _calculate_hu_moments(self, mask):
-        hu_moments = cv2.HuMoments(cv2.moments(mask)).flatten()
-        return hu_moments
+from fruit_detector.utils import get_mask, extract_channel
+from fruit_detector.repositories import RangeRepository
 
 
 class RangeDetector:
@@ -73,3 +41,29 @@ class RangeDetector:
                     range_pixels += hist[i][0]
                 if range_pixels < factor * all_pixels_number:
                     ranges.remove(r)
+
+
+def get_fruit_ranges(connection):
+    range_repository = RangeRepository(connection)
+    color_ranges = range_repository.find_all()[0]
+    summary_ranges = _get_summary_ranges(color_ranges)
+    return summary_ranges
+
+
+def _get_summary_ranges(color_ranges):
+    size = 180
+    range_binary_list = [False] * size
+    for color_range in color_ranges:
+        for i in range(color_range[0], color_range[1]):
+            range_binary_list[i] = True
+    ranges = []
+    in_range = False
+    start = 0
+    for i, v in enumerate(range_binary_list):
+        if v is True and in_range is False:
+            in_range = True
+            start = i
+        elif (v is False or i == size - 1) and in_range is True:
+            ranges.append((start, i))
+            in_range = False
+    return ranges

@@ -1,15 +1,15 @@
-import cv2
 import argparse
 import sqlite3
 import sys
-from separator.separator import ColorBasedImageSeparator
-from detector.detector import FeatureDetector
-from classifiers.classifier import Classifier
-from repository.repository import FeatureRepository, FruitRepository
 from sklearn.metrics import confusion_matrix
+import cv2
 
-from feed import get_jpg_from_directory
-from recognition import find_fruit_on_image, get_fruit_ranges
+from fruit_detector.classifiers import Classifier
+from fruit_detector.features import FeatureDetector
+from fruit_detector.color_ranges import get_fruit_ranges
+from fruit_detector.repositories import FeatureRepository, FruitRepository
+from fruit_detector.separators import ColorBasedImageSeparator
+from fruit_detector.utils import get_jpg_from_directory, find_fruit_on_image
 
 separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
@@ -51,7 +51,8 @@ def main():
         if image is None:
             print("  WARN : Unable to open file.")
             continue
-        detected_fruit_name_and_contour = find_fruit_on_image(image, fruit_color_ranges, feature_repository)
+        detected_fruit_name_and_contour = find_fruit_on_image(image, fruit_color_ranges, feature_repository, separator,
+                                                              classifier, detector)
         if detected_fruit_name_and_contour.__len__() == 0:
             print("  FAIL : Didn't detect any fruit.")
             no_objects_detected += 1
@@ -75,7 +76,7 @@ def main():
 
     connection.close()
 
-    bad_guesses = singe_element_bad_guesses + no_objects_detected + multiple_objects_detected;
+    bad_guesses = singe_element_bad_guesses + no_objects_detected + multiple_objects_detected
     guesses = (good_guesses + bad_guesses)
     accuracy = 100 * good_guesses / guesses
     print('Percent of no objects detected: {}'.format(100 * no_objects_detected / guesses))
