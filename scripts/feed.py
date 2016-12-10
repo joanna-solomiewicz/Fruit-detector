@@ -3,7 +3,8 @@ import sqlite3
 import sys
 import cv2
 
-from fruit_detector.features import FeatureDetector, RangeDetector
+from fruit_detector.features import FeatureDetector
+from fruit_detector.color_ranges import RangeDetector
 from fruit_detector.repositories import FruitRepository, FeatureRepository, RangeRepository, init_database
 from fruit_detector.separators import BinaryImageSeparator
 from fruit_detector.utils import get_jpg_from_directory, get_base_fruit_name

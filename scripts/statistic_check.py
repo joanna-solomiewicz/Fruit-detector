@@ -9,11 +9,11 @@ from fruit_detector.features import FeatureDetector
 from fruit_detector.color_ranges import get_fruit_ranges
 from fruit_detector.repositories import FeatureRepository, FruitRepository
 from fruit_detector.separators import ColorBasedImageSeparator
-from fruit_detector.utils import get_jpg_from_directory, find_fruit_on_image
+from fruit_detector.utils import get_jpg_from_directory, find_fruit_on_image, get_base_fruit_name
 
-separator = ColorBasedImageSeparator()
 detector = FeatureDetector()
 classifier = Classifier()
+separator = ColorBasedImageSeparator()
 
 
 def main():
@@ -31,6 +31,7 @@ def main():
 
     string_to_number_dictionary = {}
     number_to_string_dictionary = {}
+
     for i, fruit_name in enumerate(set(fruit_names)):
         fruit_name = fruit_name.split('_')[0]
         string_to_number_dictionary[fruit_name] = i
@@ -51,13 +52,13 @@ def main():
         if image is None:
             print("  WARN : Unable to open file.")
             continue
-        detected_fruit_name_and_contour = find_fruit_on_image(image, fruit_color_ranges, feature_repository, separator,
-                                                              classifier, detector)
+        detected_fruit_name_and_contour = find_fruit_on_image(image, fruit_color_ranges, feature_repository,
+                                                              separator, classifier, detector)
         if detected_fruit_name_and_contour.__len__() == 0:
             print("  FAIL : Didn't detect any fruit.")
             no_objects_detected += 1
         elif detected_fruit_name_and_contour.__len__() == 1:
-            detected_fruit = detected_fruit_name_and_contour[0][0].split('_')[0]
+            detected_fruit = get_base_fruit_name(detected_fruit_name_and_contour[0][0])
 
             predicted.append(string_to_number_dictionary[fruit_on_image])
             detected.append(string_to_number_dictionary[detected_fruit])
@@ -79,16 +80,33 @@ def main():
     bad_guesses = singe_element_bad_guesses + no_objects_detected + multiple_objects_detected
     guesses = (good_guesses + bad_guesses)
     accuracy = 100 * good_guesses / guesses
-    print('Percent of no objects detected: {}'.format(100 * no_objects_detected / guesses))
-    print('Percent of multiple objects detected: {}'.format(100 * multiple_objects_detected / guesses))
-    print()
-    print('Percent of bad guesses when single element was found: {}'.format(100 * singe_element_bad_guesses / guesses))
-    print('Percent of good guesses: {}'.format(accuracy))
-    print('Percent of bad guesses: {}'.format(100 - accuracy))
 
+    report_file = open('report.txt', 'w')
     matrix = confusion_matrix(detected, predicted)
-    print('\nConfusion matrix: ')
-    print(matrix)
+
+    report_file.write('Percent of no objects detected: {}\n'.format(100 * no_objects_detected / guesses))
+    report_file.write('Percent of multiple objects detected: {}\n'.format(100 * multiple_objects_detected / guesses))
+    report_file.write('Percent of good guesses: {}\n'.format(accuracy))
+    report_file.write('Percent of bad guesses: {}\n'.format(100 - accuracy))
+    report_file.write(
+        'Percent of bad guesses when single element was found: {}\n'.format(100 * singe_element_bad_guesses / guesses))
+
+    report_confusion_matrix(matrix, number_to_string_dictionary, report_file)
+
+
+def report_confusion_matrix(matrix, number_to_string_dictionary, report_file):
+    report_file.write('\n\n')
+    report_file.write('Confusion matrix:\n')
+    separate_char = ';'
+    report_file.write(separate_char)
+    for fruit_name in number_to_string_dictionary.values():
+        report_file.write(fruit_name + separate_char)
+    report_file.write('\n')
+    for i, row in enumerate(matrix):
+        report_file.write(list(number_to_string_dictionary.values())[i] + separate_char)
+        for element in row:
+            report_file.write(str(element) + separate_char)
+        report_file.write('\n')
 
 
 def get_args():
