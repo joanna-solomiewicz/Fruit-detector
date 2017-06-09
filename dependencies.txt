@@ -1,5 +1,3 @@
-Pacman:
 gtk2
 opencv
-opencv-samples
 sklearn
