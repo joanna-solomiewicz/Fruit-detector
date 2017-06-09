@@ -1,7 +1,7 @@
 # Fruit detector #
 Educational project associated with image processing and machine learning. Program must first be fed with prepared data. It uses k-NN algorithm for classification.
 
-## Example results##
+## Example results ##
 
 ![zrzut ekranu w 2017-06-09 15-30-39](https://user-images.githubusercontent.com/11861292/26978797-063082b6-4d2d-11e7-99fa-40165f046d73.png)
 
